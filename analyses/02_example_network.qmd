@@ -277,7 +277,7 @@ multiplot(indiv_row = l1,
           row_color = params$colco, 
           col_color = params$colli, 
           xlim = c(-2, 7),
-          ylim = c(-3, 5),
+          ylim = c(-6, 5),
           max.overlaps = 15) +
   ggtitle("Plant niches")
 ggsave(file.path(figures_folder, "Fig_D1b_cca_birds_pniches.png"),
@@ -349,8 +349,8 @@ l1[, 2] <- - l1[, 2]
 lsQ <- dcca$lsQ
 lsQ[, 2] <- - lsQ[, 2]
 
-xlim <- c(-3, 6)
-ylim <- c(-3, 6)
+xlim <- c(-3, 7)
+ylim <- c(-4, 7)
 grad <- 2
 
 # Plant niches
@@ -467,106 +467,6 @@ vp <- dvaripart(Y = ca,
 vp
 ```
 
-## Residuals (Appendix E)
-
-For constrained analyses, we have two sets of scores for constrained species: comparing them is a way to measure the model fit.
-
-### CCA with plant traits
-
-Let's plot plant coordinates:
-
-- from their traits: the LC scores $Z_0$ (non-normalized) (`li`) 
-- from birds' scores ("latent traits"): the WA scores $U^\star$ (`ls`)
-
-```{r}
-#| code-fold: true
-
-ls <- cca_plants$ls
-ls[, 2] <- - ls[, 2]
-
-li <- cca_plants$li
-li[, 2] <- - li[, 2]
-
-# ls -> li
-s.match(ls, li, xax = 1, yax = 2, 
-        plabels.col = params$colli)
-```
-
-### CCA with bird traits
-
-Let's plot bird coordinates:
-
-- from their traits: the LC scores $Z_0$ (non-normalized) (`li`) 
-- from plants' scores ("latent traits"): the WA scores $U^\star$ (`ls`)
-
-```{r}
-#| code-fold: true
-
-ls <- cca_birds$ls
-ls[, 2] <- - ls[, 2]
-
-li <- cca_birds$li
-li[, 2] <- - li[, 2]
-
-# ls -> li
-s.match(ls, li, xax = 1, yax = 2, 
-        plabels.col = params$colco)
-```
-
-
-### dcCA
-
-Now, let's plot bird and plants coordinates:
-
-- from their traits: the LC scores $U$ and $V$ (non-normalized) (respectively `li` and `co`) 
-- from their "latent traits: the WA scores $U^\star$ and $V^\star$ (respectively `lsR` and `lsQ`)
-
-```{r}
-#| code-fold: true
-
-li <- dcca$li
-li[, 2] <- - li[, 2]
-
-co <- dcca$co
-co[, 2] <- - co[, 2]
-
-percent <- (dcca$eig/ca$eig)*100
-xlab <- paste0("Axis 1 (", round(percent[1], 2), "%)")
-ylab <- paste0("Axis 2 (", round(percent[2], 2), "%)")
-
-axis_title_padding <- 1.3
-padding <- 1
-
-# Difference between niche and traits for plants
-# lsR -> li
-png(file.path(figures_folder, "Fig_Eb_diff_plants.png"),
-    width = 15, height = 15, units = "cm", res = 300)
-s.match(lsR, li, xax = 1, yax = 2, 
-        plabels.col = params$colli,
-        xlab = xlab, ylab = ylab,
-        layout.heights = list(axis.xlab.padding = axis_title_padding,
-                              bottom.padding = padding,
-                              top.padding = padding),
-        layout.widths = list(ylab.axis.padding = axis_title_padding,
-                             left.padding = padding,
-                             right.padding = padding))
-dev.off()
-
-# Difference between niche and traits for birds
-# lsQ -> li
-png(file.path(figures_folder, "Fig_Ea_diff_birds.png"),
-    width = 15, height = 15, units = "cm", res = 300)
-s.match(lsQ, co, xax = 1, yax = 2, 
-        plabels.col = params$colco,
-        layout.heights = list(axis.xlab.padding = axis_title_padding,
-                              bottom.padding = padding,
-                              top.padding = padding),
-        layout.widths = list(ylab.axis.padding = axis_title_padding,
-                             left.padding = padding,
-                             right.padding = padding))
-dev.off()
-```
-
 ## Species details tables (Appendix A)
 
 The code below exports trait tables with species names and codes.
@@ -670,5 +570,109 @@ wrap_plots(glist) +
 
 ggsave(file.path(figures_folder, "FigB1b_bird_traits.png"),
        width = 20, height = 7, units = "cm")
+```
+
+## Residuals (Appendix E)
+
+For constrained analyses, we have two sets of scores for constrained species: comparing them is a way to measure the model fit.
+
+### CCA with plant traits
+
+Let's plot plant coordinates:
+
+- from their traits: the LC scores $Z_0$ (non-normalized) (`li`) 
+- from birds' scores ("latent traits"): the WA scores $U^\star$ (`ls`)
+
+```{r}
+#| code-fold: true
+
+ls <- cca_plants$ls
+ls[, 2] <- - ls[, 2]
+
+li <- cca_plants$li
+li[, 2] <- - li[, 2]
+
+# ls -> li
+s.match(ls, li, xax = 1, yax = 2, 
+        plabels.col = params$colli, 
+        plabels.cex = 0.6)
+```
+
+### CCA with bird traits
+
+Let's plot bird coordinates:
+
+- from their traits: the LC scores $Z_0$ (non-normalized) (`li`) 
+- from plants' scores ("latent traits"): the WA scores $U^\star$ (`ls`)
+
+```{r}
+#| code-fold: true
+
+ls <- cca_birds$ls
+ls[, 2] <- - ls[, 2]
+
+li <- cca_birds$li
+li[, 2] <- - li[, 2]
+
+# ls -> li
+s.match(ls, li, xax = 1, yax = 2, 
+        plabels.col = params$colco,
+        plabels.cex = 0.8)
+```
+
+
+### dcCA
+
+Now, let's plot bird and plants coordinates:
+
+- from their traits: the LC scores $U$ and $V$ (non-normalized) (respectively `li` and `co`) 
+- from their "latent traits: the WA scores $U^\star$ and $V^\star$ (respectively `lsR` and `lsQ`)
+
+```{r}
+#| code-fold: true
+
+li <- dcca$li
+li[, 2] <- - li[, 2]
+
+co <- dcca$co
+co[, 2] <- - co[, 2]
+
+percent <- (dcca$eig/sum(ca$eig))*100
+xlab <- paste0("Axis 1 (", round(percent[1], 2), "%)")
+ylab <- paste0("Axis 2 (", round(percent[2], 2), "%)")
+
+axis_title_padding <- 1.3
+padding <- 1
+
+# Difference between niche and traits for plants
+# lsR -> li
+# png(file.path(figures_folder, "Fig_Eb_diff_plants.png"),
+#     width = 15, height = 15, units = "cm", res = 300)
+s.match(lsR, li, xax = 1, yax = 2, 
+        plabels.col = params$colli,
+        plabels.cex = 0.8,
+        xlab = xlab, ylab = ylab,
+        layout.heights = list(axis.xlab.padding = axis_title_padding,
+                              bottom.padding = padding,
+                              top.padding = padding),
+        layout.widths = list(ylab.axis.padding = axis_title_padding,
+                             left.padding = padding,
+                             right.padding = padding))
+# dev.off()
+
+# Difference between niche and traits for birds
+# lsQ -> li
+# png(file.path(figures_folder, "Fig_Ea_diff_birds.png"),
+#     width = 15, height = 15, units = "cm", res = 300)
+s.match(lsQ, co, xax = 1, yax = 2, 
+        plabels.col = params$colco,
+        plabels.cex = 0.8,
+        layout.heights = list(axis.xlab.padding = axis_title_padding,
+                              bottom.padding = padding,
+                              top.padding = padding),
+        layout.widths = list(ylab.axis.padding = axis_title_padding,
+                             left.padding = padding,
+                             right.padding = padding))
+# dev.off()
 ```
 
