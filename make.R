@@ -11,6 +11,9 @@ analyses_folder <- here("analyses")
 colco <- "darkred"
 colli <- "cornflowerblue"
 
+# Define threshold to filter interactions
+thr <- 3
+
 # Run analyses ------------------------------------------------------------
 
 # Prepare data (writes data to outputs/01_clean_data)
@@ -20,12 +23,14 @@ source(file.path(analyses_folder, "01_clean_data.R"))
 dataset <- "Peru1"
 quarto::quarto_render(file.path(analyses_folder, "02_example_network.qmd"),
                       execute_params = list(dataset = dataset,
+                                            thr = thr,
                                             colco = colco, 
                                             colli = colli))
 
 # Analyze all networks
 quarto::quarto_render(file.path(analyses_folder, "03_all_networks.qmd"),
-                      execute_params = list(colco = colco, 
+                      execute_params = list(thr = thr, 
+                                            colco = colco, 
                                             colli = colli))
 
 # Evaluate R2 correction (Appendix F)

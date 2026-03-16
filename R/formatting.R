@@ -38,47 +38,6 @@ df_to_matrix <- function(df,
 }
 
 
-#' Interaction matrix to dataframe
-#'
-#' Transform interaction matrix (incidence matrix) to a dataframe with
-#' 3 columns: the names given in the arguments `colnames` and `rownames` and
-#' a third column `value`.
-#'
-#' @param mat Interaction matrix. The function assumes this matrix has row and
-#' column names that are then used to fill the output dataframe columns.
-#' @param colnames The name to give to the dataframe column containing the matrix column names.
-#' @param rownames The name to give to the dataframe column containing the matrix row names.
-#' @param tofactor Should the final columns `colnames` and `rownames` be of type factor?
-#'
-#' @return A dataframe with 3 columns:
-#'
-#' + `colnames` (defaults to "animals"), containing the initial matrix column names
-#' + `rownames` (defaults to "plants"), containing the initial matrix row names
-#' + `value` containing the matrix values
-#'
-#' @export
-matrix_to_df <- function(mat,
-                         colnames = "animals",
-                         rownames = "plants",
-                         tofactor = TRUE) {
-
-  df <- mat |>
-    tibble::rownames_to_column(rownames)
-
-  df <- df |>
-    tidyr::pivot_longer(cols = 2:ncol(df),
-                        names_to = colnames)
-
-  # Factor
-  if (tofactor) {
-    df[[colnames]] <- factor(df[[colnames]], levels = colnames(mat))
-    df[[rownames]] <- factor(df[[rownames]], levels = rownames(mat))
-  }
-
-  return(df)
-}
-
-
 #' Filter matrix
 #'
 #' Filter incidence matrix to keep only species that interact

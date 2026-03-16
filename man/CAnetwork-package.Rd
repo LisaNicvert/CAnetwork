@@ -6,7 +6,7 @@
 \alias{CAnetwork-package}
 \title{CAnetwork: Ecological Networks Analysis with Correspondence Analysis}
 \description{
-Analyze ecological networks and possibly species-environment tables using various correspondence analyses methods (constrained or not) and also quantify niches widths with reciprocal scaling.
+Analyze trait matching and interaction niches in ecological networks using correspondence analyses.
 }
 \author{
 \strong{Maintainer}: Lisa Nicvert \email{lisa.nicvert@univ-lyon1.fr} (\href{https://orcid.org/0009-0006-5763-0865}{ORCID})

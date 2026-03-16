@@ -11,6 +11,7 @@ author:
 embed-resources: true
 code-fold: true
 params:
+  thr: 3
   colco: "darkred"
   colli: "cornflowerblue"
 bibliography: references.bib
@@ -30,8 +31,6 @@ devtools::load_all()
 ```
 
 ```{r}
-thr <- 2
-
 nrepet <- 999
 
 figures_folder <- here("figures")
@@ -69,7 +68,7 @@ for (i in 1:length(inter_list)) {
   intermat <- df_to_matrix(inter_list[[i]], 
                            rows = "plant_species_code",
                            columns = "bird_species_code")
-  intermat <- filter_matrix(intermat, thr = thr)
+  intermat <- filter_matrix(intermat, thr = params$thr)
   
   # Prepare traits
   pnames <- pt_list[[i]] |> 

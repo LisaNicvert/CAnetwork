@@ -13,6 +13,7 @@ author:
 embed-resources: true
 code-fold: true
 params:
+  thr: 3
   colco: "darkred"
   colli: "cornflowerblue"
   dataset: "Peru1"
@@ -88,7 +89,7 @@ interactions <- df_to_matrix(interactions,
                              rows = "plant_species_code",
                              columns = "bird_species_code")
 
-interactions <- filter_matrix(interactions, thr = 3)
+interactions <- filter_matrix(interactions, thr = params$thr)
 
 plant_traits <- plant_traits |> 
   dplyr::filter(plant_species_code %in% rownames(interactions))
