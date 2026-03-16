@@ -1,0 +1,308 @@
+---
+title: "Corrected R-squared"
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+editor: source
+author: 
+  - name: "Lisa Nicvert"
+    orcid: 0009-0006-5763-0865
+embed-resources: true
+code-fold: true
+params:
+  nrep: 3
+bibliography: references.bib
+---
+
+```{r}
+library(here)
+
+library(ggplot2)
+
+library(dplyr)
+
+library(ade4)
+library(adegraphics)
+
+devtools::load_all()
+
+set.seed(42)
+
+figures_folder <- here("figures")
+output_folder <- here("outputs", "04_corrected_R2")
+```
+
+## Introduction
+
+The aim of this analysis is to propose the following measures for double-constrained analyses:
+
+- a permutation test that has the expected rate of false positives (less than risk $\alpha$)
+- a correction for the R-squared 
+
+@peres-neto2006 proposed a $R^2$ correction for CCA based on permutations, but no correction has been proposed for dc-CA. However, @dray_testing_2008 proposed a permutation test for species-environment links with the fourth-corner method: here, we can try to combine both approaches to propose a corrected $R^2$ and an adapted permutation test for dc-CA.
+
+
+## The problem
+
+When there are 3 tables (let's call them $\mathbf{R}$ for row variables, $\mathbf{L}$ for the observed table, $\mathbf{Q}$ for column variables), there can be 3 types of links:
+
+- link only between $\mathbf{R}$ and $\mathbf{L}$;
+- link only between $\mathbf{Q}$ and $\mathbf{L}$;
+- link only between $\mathbf{R}$ and $\mathbf{Q}$ (this is what we want to test and $H_1$);
+
+```{r}
+plotmat(E = TRUE, T_ = TRUE,
+        r = 8, c = 5,
+        l = 2, k = 3,
+        name_dim = FALSE,
+        Yname = "italic(L)",
+        Ename = "italic(R)",
+        Tname = "italic(Q)")
+```
+
+Alternatively, there can be no link between $\mathbf{R}$ and $\mathbf{Q}$.
+Our issue is that $H_0$ should encompass the case above (no link), but also the links between one of the two tables $\mathbf{R}$ or $\mathbf{Q}$ and $\mathbf{L}$; if only the absence of link between  $\mathbf{R}$ and $\mathbf{Q}$ is tested, we risk having too many false positives compared to the chosen risk $\alpha$.
+
+for the same reason, the observed $R^2$ supposed to give the link between  $\mathbf{R}$ and $\mathbf{Q}$ might be overestimated if there is a link between  $\mathbf{R}$ and $\mathbf{L}$ or  $\mathbf{Q}$ and $\mathbf{L}$, but no link between $\mathbf{R}$ and $\mathbf{Q}$. 
+
+## The solution
+  
+To answer this problem, we rely on a permutation approach for testing and for correcting the $R^2$ (here, it is noted $R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}}$) (similarly to @peres-neto2006). To do that, we adapt the permutation approach proposed by @dray_testing_2008 in the context of fourth-corner analysis to dc-CA.
+
+The permutation approach proceeds as follows:
+
+- We use the following model:
+  1. predict the values of $\mathbf{L}$ with $\mathbf{R}$; $\mathbf{\hat{L}_R} = \mathbf{L} \sim \mathbf{R}$
+  2. predict the modeled values of $\mathbf{L}$ with $\mathbf{Q}$; $\mathbf{\hat{L}_{R,Q}} = \mathbf{\hat{L}_R}^\top \sim \mathbf{Q}$
+- Then, to test the link between $\mathbf{L}$ and 
+$\mathbf{R}$, we permute the rows of $\mathbf{R}$ in step 1. - After that, to test the link between $\mathbf{L}$ and $\mathbf{Q}$, we permute the rows of $\mathbf{Q}$ in step 2.
+
+We then obtain two different p-values for each batch of permutations: to test the link, we decide to be conservative, and keep only the highest p-value.
+
+
+We also get two different values of $R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}}$ for each run of simulations. We then combine these values to obtain a corrected $R^2$, noted $R^2_{(\mathbf{L}|\mathbf{R},\mathbf{Q})\text{perm}}$, given by:
+
+$$R^2_{(\mathbf{L}|\mathbf{R},\mathbf{Q})\text{perm}} = 1 - \frac{1 - R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}}}{1-\bar{R}_{\text{perm}}}$$
+
+where $\bar{R}_{\text{perm}}$ is a the mean value for the values of $R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}}$ obtained with the different permutation procedures.
+
+
+## Simulations
+
+We simulate data under a model where $\mathbf{R}$ and $\mathbf{Q}$ are linked, and permute $\mathbf{R}$ and/or $\mathbf{Q}$ to simulate cases where only $\mathbf{R}$ or $\mathbf{Q}$ are linked to $\mathbf{L}$.
+
+Then, we apply our permutation test and $R^2$ correction for each of these cases, expecting $R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}} \neq 0$ and a false positive rate inferior to $\alpha$ only when $\mathbf{R}$ and $\mathbf{Q}$ are linked.
+
+```{r}
+# Simulation parameters
+nresource <- 50
+nconsumer <- 60
+sd_tol <- 0.1
+mean_tol <- 5
+ninter <- 5000
+delta <- 1
+
+le.grad <- 100
+buffer <- 0
+ratio.grad <- 0.7
+
+meanlog <- log(3)
+sdlog <- log(1.5)
+```
+
+
+```{r}
+res_df <- data.frame()
+for (rep in 1:params$nrep) {
+  # Simulate data ---
+  print(rep)
+  consumerab <- rlnorm(nconsumer, 
+                     meanlog = meanlog, 
+                     sdlog = sdlog)
+  resourceab <- rlnorm(nresource, 
+                       meanlog = meanlog, 
+                       sdlog = sdlog)
+
+  sim <- compas2d(nsp = nconsumer, 
+                  nsite = nresource,
+                  le.grad = le.grad, 
+                  col_prefix = "c",
+                  row_prefix = "r",
+                  rowvar_prefix = "tr",
+                  remove_zeroes = FALSE,
+                  col_abund = consumerab,
+                  row_abund = resourceab,
+                  ninter = ninter,
+                  ratio.grad = ratio.grad,
+                  mean.tol = mean_tol, 
+                  sd.tol = sd_tol, 
+                  delta = delta,
+                  buffer = buffer)
+  
+  comm <- data.frame(sim$comm)
+  resource_traits <- data.frame(sim$rowvar)
+  consumer_traits <- data.frame(sim$colvar[, "mean", ])
+  
+  # Add random traits ---
+  randr <- matrix(rnorm(n = nresource*3),
+                  ncol = 3)
+  randc <- matrix(rnorm(n = nconsumer*3),
+                  ncol = 3)
+  resource_traits <- cbind(resource_traits, randr)
+  consumer_traits <- cbind(consumer_traits, randc)
+  
+  # Randomize traits ---
+  rand_resource <- sample(1:nresource, 
+                          size = nresource, replace = FALSE)
+  rand_consumer <- sample(1:nconsumer, 
+                          size = nconsumer, replace = FALSE)
+  resource_traits_perm <- resource_traits[rand_resource, ]
+  consumer_traits_perm <- consumer_traits[rand_consumer, ]
+  
+  traits_list <- list("rperm" = list("r" = resource_traits_perm,
+                                     "c" = consumer_traits),
+                      "cperm" = list("r" = resource_traits,
+                                     "c" = consumer_traits_perm),
+                      "rcperm" = list("r" = resource_traits_perm,
+                                      "c" = consumer_traits_perm),
+                      "noperm" = list("r" = resource_traits,
+                                      "c" = consumer_traits))
+  
+  # Variation partitioning ---
+  ca <- dudi.coa(comm, nf = 2, scannf = FALSE)
+  
+  vp <- lapply(names(traits_list), 
+               function(nam) {
+                 dvaripart(Y = ca,
+                           dfR = traits_list[[nam]]$r, 
+                           dfQ = traits_list[[nam]]$c)})
+  names(vp) <- names(traits_list)
+  
+  # Get p-values
+  pval <- sapply(vp, function(v) max(v$test$pvalue[c(3, 4)]))
+  
+  # Get observed R2
+  R2_obs <- sapply(vp, function(v) unname(v$R2["b"]))
+  
+  # Get corrected R2
+  R2_corr <- sapply(vp, function(v) unname(v$R2.adj["b"]))
+  
+  res_df_rep <- data.frame(perm = names(traits_list),
+                           pval = pval,
+                           R2_obs = R2_obs,
+                           R2_corr = R2_corr)
+  res_df <- rbind(res_df, res_df_rep)
+}
+
+# Save results
+if (!dir.exists(output_folder)) {
+    dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
+}
+saveRDS(res_df, file.path(output_folder, "R2.rds"))
+```
+
+```{r}
+# Read results
+res_df <- readRDS(file.path(output_folder, "R2.rds"))
+```
+
+## Results
+
+```{r}
+res_df$perm_label <- factor(res_df$perm,
+                            levels = c("noperm", "rperm", 
+                                       "cperm", "rcperm"),
+                            labels = c("rows + columns", "columns", 
+                                       "rows", "none"))
+
+pval_prop <- res_df |> 
+  dplyr::mutate(signif = pval < 0.05) |> 
+  dplyr::group_by(perm_label) |> 
+  dplyr::summarize(prop_signif = sum(signif)/n()) |> 
+  dplyr::mutate(prop_signif_label = ifelse(prop_signif < 0.001 & prop_signif != 0,
+                                           "< 0.001", as.character(round(prop_signif, 3))))
+
+ggplot(res_df) +
+  geom_boxplot(aes(x = pval, y = perm_label)) +
+  geom_jitter(aes(x = pval, y = perm_label), 
+              width = 0, height = 0.25) +
+  geom_vline(xintercept = 0.05, linetype = "dashed") +
+  geom_label(data = pval_prop,
+            aes(x = 0.05, y = perm_label,
+                label = prop_signif_label),
+                hjust = 0, nudge_x = 0.02) +
+  scale_y_discrete(limits = rev) +
+  xlim(0, 1) +
+  xlab("p-value") +
+  ylab("Link type") +
+  theme_minimal() +
+  theme()
+
+ggsave(file.path(figures_folder, "Fig_F1b_pval_distri.png"),
+       width = 14, height = 10, units = "cm", 
+       bg = "white")
+```
+
+p-values are small only for the data that was not permuted.
+
+
+```{r}
+res_df |> 
+  group_by(perm_label) |> 
+  summarize(R2_obs = mean(R2_obs), .groups = "drop")
+```
+
+Let's see if the corrections improve the matter:
+
+```{r}
+res_R2 <- res_df |> 
+  dplyr::select(perm, perm_label, starts_with("R2")) |> 
+  tidyr::pivot_longer(cols = starts_with("R2"),
+                      names_to = "type",
+                      values_to = "R2")
+res_R2$type_label <- factor(res_R2$type,
+                            levels = c("R2_obs", "R2_corr"),
+                            labels = c("uncorrected", "corrected"))
+
+R2_mean <- res_R2 |> 
+  dplyr::group_by(perm_label, type_label) |> 
+  dplyr::summarize(R2_mean = mean(R2),
+                   R2_max = max(R2) + 0.03) |> 
+  dplyr::mutate(R2_label = ifelse(R2_mean < 0.001,
+                                  "< 0.001", as.character(round(R2_mean, 3))))
+
+ggplot(res_R2) +
+  geom_boxplot(aes(x = R2, y = perm_label, color = type_label),
+               position = position_dodge(0.8)) +
+  geom_jitter(aes(x = R2,
+                  y = perm_label, color = type_label), 
+              position = position_jitterdodge(jitter.width = 0.4,
+                                              jitter.height = 0,
+                                              dodge.width = 0.8),
+              alpha = 0.5) +
+  geom_vline(xintercept = 0.0, linetype = "dashed") +
+  geom_label(data = R2_mean,
+             aes(x = R2_max, y = perm_label, 
+                 label = R2_label,
+                 col = type_label),
+                 position = position_dodge(width = 0.8),
+                 hjust = 0, show.legend = FALSE) +
+  scale_y_discrete(limits = rev) +
+  # scale_x_continuous(limits = c(-0.05, 0.4)) +
+  ylab("Link type") +
+  xlab(expression(R^2)) +
+  labs(color = expression(R^2~"type")) +
+  theme_minimal()
+
+ggsave(file.path(figures_folder, "Fig_E1b_R2_comparison.png"),
+       width = 14, height = 10, units = "cm", bg = "white")
+```
+
+Our correction reduces the R2, and allows to infer no signal when there is none, in particular in cases when only rows or columns were permuted.
+
+```{r}
+res_R2 |> 
+  group_by(perm, type) |> 
+  summarize(R2 = mean(R2), .groups = "drop")
+```

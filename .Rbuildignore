@@ -1,0 +1,14 @@
+^renv$
+^renv\.lock$
+^LICENSE\.md$
+^analyses$
+^data$
+^ToDO\.txt$
+^CAnetwork\.Rproj$
+^\.Rproj\.user$
+^figures/*
+^outputs/*
+^other/*
+^\.gitattributes$
+^install_dependencies\.R$
+^CAnetwork.*\.pdf$

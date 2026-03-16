@@ -1,0 +1,287 @@
+---
+title: "Analyze networks"
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+editor: source
+author: 
+  - name: "Lisa Nicvert"
+    orcid: 0009-0006-5763-0865
+embed-resources: true
+code-fold: true
+params:
+  colco: "darkred"
+  colli: "cornflowerblue"
+bibliography: references.bib
+---
+
+
+```{r, message = FALSE, warning= FALSE}
+library(here)
+
+library(ggplot2)
+library(patchwork)
+
+library(ade4)
+library(adegraphics)
+
+devtools::load_all()
+```
+
+```{r}
+thr <- 2
+
+nrepet <- 999
+
+figures_folder <- here("figures")
+input_folder <- file.path(here("outputs/01_clean_data"))
+```
+
+## Read data
+
+```{r read_data}
+dirs <- list.dirs(input_folder, full.names = FALSE)
+dirs <- dirs[dirs != ""]
+
+inter_list <- list()
+pt_list <- list()
+bt_list <- list()
+for (dir in dirs) {
+  inter <- read.csv(file.path(input_folder, dir, 
+                              "interactions.csv"))
+  pt <- read.csv(file.path(input_folder, dir, 
+                              "plant_traits.csv"))
+  bt <- read.csv(file.path(input_folder, dir, 
+                              "bird_traits.csv"))
+  
+  inter_list[[dir]] <- inter
+  pt_list[[dir]] <- pt
+  bt_list[[dir]] <- bt
+  }
+```
+
+```{r}
+pnames_list <- list()
+bnames_list <- list()
+for (i in 1:length(inter_list)) {
+  # Filter matrix
+  intermat <- df_to_matrix(inter_list[[i]], 
+                           rows = "plant_species_code",
+                           columns = "bird_species_code")
+  intermat <- filter_matrix(intermat, thr = thr)
+  
+  # Prepare traits
+  pnames <- pt_list[[i]] |> 
+    dplyr::select(plant_species_code, plant_species)
+  pt_filtered <- pt_list[[i]] |>
+    tibble::column_to_rownames("plant_species_code") |> 
+    tidyr::drop_na() |> 
+    dplyr::select(-plant_species) 
+  
+  bnames <- bt_list[[i]] |> 
+    dplyr::select(bird_species_code, bird_species)
+  bt_filtered <- bt_list[[i]] |>
+    tibble::column_to_rownames("bird_species_code") |> 
+    tidyr::drop_na() |> 
+    dplyr::select(-bird_species) 
+  
+  # Filter
+  p <- intersect(rownames(intermat), rownames(pt_filtered))
+  b <- intersect(colnames(intermat), rownames(bt_filtered))
+  
+  pt_filtered <- pt_filtered[p, ]
+  bt_filtered <- bt_filtered[b, ]
+  intermat <- intermat[p, b]
+  
+  # Store names
+  dataname <- names(inter_list)[i]
+  pnames_list[[dataname]] <- pnames
+  bnames_list[[dataname]] <- bnames
+  
+  # Update lists
+  inter_list[[i]] <- data.frame(intermat)
+  pt_list[[i]] <- pt_filtered
+  bt_list[[i]] <- bt_filtered
+}
+```
+
+## Correspondence analyses
+
+```{r}
+Rcor_df <- data.frame()
+
+for (i in 1:length(inter_list)) {
+  inter <- inter_list[[i]]
+  pt <- pt_list[[i]]
+  bt <- bt_list[[i]]
+  
+  r <- nrow(inter)
+  c <- ncol(inter)
+  l <- ncol(pt)
+  k <- ncol(bt)
+  
+  # CA
+  ca <- dudi.coa(inter, scannf = FALSE,
+                 min(c(r - 1, c - 1)))
+  
+  vp <- dvaripart(Y = ca, 
+                  dfR = pt, dfQ = bt)
+  
+  R2 <- vp$R2.adj
+  
+  pval <- vp$test$pvalue
+  
+
+  Rcor <- data.frame(dataset = rep(names(inter_list)[i], 4), 
+                     type = c("residual", 
+                              "bird_traits", "plant_traits",
+                              "matching"),
+                     R2 = c(R2["d"], 
+                            R2["c"], R2["a"], 
+                            R2["b"]),
+                     p = c(NA, pval[2], pval[1],
+                           max(pval[c(3, 4)])))
+  
+  Rcor_df <- rbind(Rcor_df, Rcor)
+}
+```
+
+## Results analysis
+
+First, check that the $R^2$ sum to one.
+
+```{r}
+Rcor_df |> 
+  dplyr::group_by(dataset) |> 
+  dplyr::summarize(sum = sum(R2))
+
+# Ecuador 3 is of dimension 3x5, so there are too many traits and R2 = 1
+# we remove it
+Rcor_df <- Rcor_df |> 
+  dplyr::filter(dataset != "ANDEAN_Ecuador3")
+```
+
+```{r}
+# Prepare df
+Rcor_df <- Rcor_df |> dplyr::mutate(signif = p > 0.05)
+
+# Add columns
+Rcor_df <- Rcor_df |> 
+  dplyr::mutate(dataset_name = gsub("^ANDEAN_", "", dataset), .after = dataset) |> 
+  dplyr::mutate(dataset_name = gsub("_", " ", dataset_name)) |> 
+  dplyr::mutate(type_name = gsub("_", " ", type), .after = type)
+
+# Reorder factors
+Rcor_df$type <- factor(Rcor_df$type, 
+                       levels = c("residual", "bird_traits", "plant_traits", "matching"))
+Rcor_df$type_name <- factor(Rcor_df$type_name, 
+                            levels = c("residual", "bird traits", "plant traits", "matching"))
+```
+
+
+Below, we summarize the results by dataset:
+
+```{r}
+coltype <- viridisLite::viridis(n = length(levels(Rcor_df$type_name)), 
+                                begin = 0.1, end = 0.9)
+names(coltype) <- levels(Rcor_df$type_name)
+
+# Dataset order
+subset <- Rcor_df[Rcor_df$type == "residual", ]
+ord <- order(subset$R2[subset$type == "residual"])
+dataset_order <- subset$dataset_name[rev(ord)]
+
+Rcor_df_bar <- Rcor_df
+Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name, 
+                                   levels = dataset_order, ordered = TRUE)
+```
+
+
+```{r}
+(gbar <- ggplot(Rcor_df_bar,
+                aes(y = dataset_name, x = R2, fill = type_name)) +
+  geom_col() +
+  geom_vline(xintercept = c(0, 1), linetype = "dashed") +
+  scale_fill_manual(values = coltype, name = "Origin of variation") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  ylab("Dataset") +
+  theme_minimal() +
+  theme(legend.position = "bottom"))
+```
+
+
+```{r}
+(gbox <- ggplot(Rcor_df,
+               aes(y = forcats::fct_rev(type_name), 
+                   x = R2, color = type_name)) +
+  geom_boxplot(show.legend = FALSE) +
+  geom_jitter(width = 0, height = 0.2,
+              show.legend = FALSE) +
+  stat_summary(fun = "median", 
+               geom = "label", 
+               aes(label = round(after_stat(x), 3)),
+               size = 3,
+               show.legend = FALSE) +
+  scale_color_manual(values = coltype) +
+  ylab("Origin of variation") +
+  theme_minimal())
+```
+
+```{r}
+(gbar + gbox) + 
+  plot_layout(guides = 'collect',
+              axis_titles = "collect") &
+  theme(legend.position='bottom'
+        # axis.text.y = element_text(angle = 90, vjust = 0.5)
+        ) &
+  scale_x_continuous(breaks = seq(0, 1, by = 0.2), 
+                     limits = c(-0.1, 1.1)) &
+  xlab(bquote("Corrected"~R^2))
+
+ggsave(file.path(figures_folder, "Fig4_dcca_var_networks.png"),
+       width = 18, height = 10, units = "cm")
+```
+
+
+This graph shows that for most datasets, the largest part of variation is residual and cannot be attributed to the traits considered here (listed below):
+
+- plants: fruit length and diameter, plant height and crop mass;
+- birds: Kipp's index (wing pointedness), bill length and width and body mass.
+
+```{r}
+unique(lapply(pt_list, names))
+
+unique(lapply(bt_list, names))
+```
+
+Moreover, we can see that for some datasets, negative parts of variations for plant traits of matching make the result more difficult to interpret (basically, it means that for these datasets, matching cannot be reliably assessed.)
+
+```{r}
+neg <- Rcor_df |> 
+  dplyr::group_by(dataset) |> 
+  dplyr::summarize(has_neg = any(R2 < 0)) |> 
+  dplyr::filter(has_neg) 
+
+paste(nrow(neg), "datasets have negative R2 values:", 
+      paste(neg$dataset, collapse = ", "), collapse = " ")
+```
+
+```{r}
+Rcor_df |> 
+  dplyr::arrange(dataset, type) |> 
+  DT::datatable()
+```
+
+
+The table below summarizes these statistics.
+
+```{r}
+Rcor_df |> 
+  dplyr::group_by(type) |> 
+  dplyr::summarize(mean_R2 = mean(R2),
+                   median_R2 = median(R2),
+                   sd_R2 = sd(R2),
+                   prop_signif = sum(signif)/length(unique(dataset))) |> 
+  DT::datatable()
+```

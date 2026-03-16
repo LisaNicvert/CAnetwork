@@ -1,0 +1,33 @@
+Package: CAnetwork
+Title: Ecological Networks Analysis with Correspondence Analysis
+Version: 1.1.0
+Authors@R: 
+    person("Lisa", "Nicvert", , "lisa.nicvert@univ-lyon1.fr", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0006-5763-0865"))
+Description: Analyze ecological networks and possibly species-environment tables using various correspondence analyses methods (constrained or not) and also quantify niches widths with reciprocal scaling.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    ade4,
+    adegraphics,
+    bipartite,
+    dplyr,
+    ggplot2,
+    ggrepel,
+    grid,
+    lmtest,
+    mvtnorm,
+    stats,
+    stringr,
+    tibble,
+    tidyr,
+    tidyselect
+Suggests: 
+    ape,
+    FD,
+    geometry,
+    MASS,
+    Matrix,
+    StatMatch
