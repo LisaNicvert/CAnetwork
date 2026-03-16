@@ -8,17 +8,23 @@ editor: source
 author: 
   - name: "Lisa Nicvert"
     orcid: 0009-0006-5763-0865
+  - name: "Hervé Fritz"
+    orcid: 0000-0002-7106-3661
+  - name: "Stéphane Dray"
+    orcid: 0000-0003-0153-1105
 embed-resources: true
-code-fold: true
 params:
-  thr: 3
+  thr: 0
   colco: "darkred"
   colli: "cornflowerblue"
 bibliography: references.bib
 ---
 
 
-```{r, message = FALSE, warning= FALSE}
+```{r}
+#| code-fold: true
+#| output: false
+
 library(here)
 
 library(ggplot2)
@@ -31,8 +37,10 @@ devtools::load_all()
 ```
 
 ```{r}
+# Number of permutations for variance partitioning
 nrepet <- 999
 
+# Paths
 figures_folder <- here("figures")
 input_folder <- file.path(here("outputs/01_clean_data"))
 ```
@@ -40,9 +48,11 @@ input_folder <- file.path(here("outputs/01_clean_data"))
 ## Read data
 
 ```{r read_data}
+# Iterate folders to get data
 dirs <- list.dirs(input_folder, full.names = FALSE)
 dirs <- dirs[dirs != ""]
 
+# Initialize lists
 inter_list <- list()
 pt_list <- list()
 bt_list <- list()
@@ -57,10 +67,13 @@ for (dir in dirs) {
   inter_list[[dir]] <- inter
   pt_list[[dir]] <- pt
   bt_list[[dir]] <- bt
-  }
+}
 ```
 
 ```{r}
+# Filter data (threshold and NA traits)
+
+# Initialize species names list
 pnames_list <- list()
 bnames_list <- list()
 for (i in 1:length(inter_list)) {
@@ -93,7 +106,7 @@ for (i in 1:length(inter_list)) {
   bt_filtered <- bt_filtered[b, ]
   intermat <- intermat[p, b]
   
-  # Store names
+  # Store species code/names correspondences (not used)
   dataname <- names(inter_list)[i]
   pnames_list[[dataname]] <- pnames
   bnames_list[[dataname]] <- bnames
@@ -105,16 +118,20 @@ for (i in 1:length(inter_list)) {
 }
 ```
 
-## Correspondence analyses
+## Variation partitioning
+
+Loop datasets to partition variation:
 
 ```{r}
 Rcor_df <- data.frame()
 
 for (i in 1:length(inter_list)) {
+  # Get corresponding interactions and traits
   inter <- inter_list[[i]]
   pt <- pt_list[[i]]
   bt <- bt_list[[i]]
   
+  # Get dimensions
   r <- nrow(inter)
   c <- ncol(inter)
   l <- ncol(pt)
@@ -124,14 +141,15 @@ for (i in 1:length(inter_list)) {
   ca <- dudi.coa(inter, scannf = FALSE,
                  min(c(r - 1, c - 1)))
   
+  # Variation partitioning
   vp <- dvaripart(Y = ca, 
                   dfR = pt, dfQ = bt)
   
+  # Store R2 values and p-values
   R2 <- vp$R2.adj
-  
   pval <- vp$test$pvalue
   
-
+  # Format results
   Rcor <- data.frame(dataset = rep(names(inter_list)[i], 4), 
                      type = c("residual", 
                               "bird_traits", "plant_traits",
@@ -162,6 +180,17 @@ Rcor_df <- Rcor_df |>
 ```
 
 ```{r}
+# Show negative R2
+neg <- Rcor_df |> 
+  dplyr::group_by(dataset) |> 
+  dplyr::summarize(has_neg = any(R2 < 0)) |> 
+  dplyr::filter(has_neg) 
+
+paste(nrow(neg), "datasets have negative R2 values:", 
+      paste(neg$dataset, collapse = ", "), collapse = " ")
+```
+
+```{r}
 # Prepare df
 Rcor_df <- Rcor_df |> dplyr::mutate(signif = p > 0.05)
 
@@ -178,10 +207,38 @@ Rcor_df$type_name <- factor(Rcor_df$type_name,
                             levels = c("residual", "bird traits", "plant traits", "matching"))
 ```
 
-
-Below, we summarize the results by dataset:
+### By dataset
 
 ```{r}
+#| code-fold: true
+
+Rcor_df |> 
+  dplyr::arrange(dataset, type) |> 
+  DT::datatable() |> 
+  DT::formatRound(columns = c("R2", "p"), digits = 3)
+```
+
+### By source of variation
+
+```{r}
+#| code-fold: true
+
+Rcor_df |> 
+  dplyr::group_by(type) |> 
+  dplyr::summarize(mean_R2 = mean(R2),
+                   median_R2 = median(R2),
+                   sd_R2 = sd(R2),
+                   prop_signif = sum(signif)/length(unique(dataset))) |> 
+  DT::datatable() |> 
+  DT::formatRound(columns = c("mean_R2", "median_R2", "sd_R2"), digits = 3)
+```
+
+### Plot
+
+```{r}
+#| code-fold: true
+
+# Prepare data for plotting bars by dataset
 coltype <- viridisLite::viridis(n = length(levels(Rcor_df$type_name)), 
                                 begin = 0.1, end = 0.9)
 names(coltype) <- levels(Rcor_df$type_name)
@@ -198,6 +255,10 @@ Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name,
 
 
 ```{r}
+#| code-fold: true
+#| output: false
+
+# Plot by dataset
 (gbar <- ggplot(Rcor_df_bar,
                 aes(y = dataset_name, x = R2, fill = type_name)) +
   geom_col() +
@@ -211,6 +272,10 @@ Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name,
 
 
 ```{r}
+#| code-fold: true
+#| output: false
+
+# Plot by source of variation
 (gbox <- ggplot(Rcor_df,
                aes(y = forcats::fct_rev(type_name), 
                    x = R2, color = type_name)) +
@@ -228,12 +293,14 @@ Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name,
 ```
 
 ```{r}
+#| fig-width: 9
+#| fig-height: 5
+#| code-fold: true
+
 (gbar + gbox) + 
   plot_layout(guides = 'collect',
               axis_titles = "collect") &
-  theme(legend.position='bottom'
-        # axis.text.y = element_text(angle = 90, vjust = 0.5)
-        ) &
+  theme(legend.position='bottom') &
   scale_x_continuous(breaks = seq(0, 1, by = 0.2), 
                      limits = c(-0.1, 1.1)) &
   xlab(bquote("Corrected"~R^2))
@@ -242,45 +309,3 @@ ggsave(file.path(figures_folder, "Fig4_dcca_var_networks.png"),
        width = 18, height = 10, units = "cm")
 ```
 
-
-This graph shows that for most datasets, the largest part of variation is residual and cannot be attributed to the traits considered here (listed below):
-
-- plants: fruit length and diameter, plant height and crop mass;
-- birds: Kipp's index (wing pointedness), bill length and width and body mass.
-
-```{r}
-unique(lapply(pt_list, names))
-
-unique(lapply(bt_list, names))
-```
-
-Moreover, we can see that for some datasets, negative parts of variations for plant traits of matching make the result more difficult to interpret (basically, it means that for these datasets, matching cannot be reliably assessed.)
-
-```{r}
-neg <- Rcor_df |> 
-  dplyr::group_by(dataset) |> 
-  dplyr::summarize(has_neg = any(R2 < 0)) |> 
-  dplyr::filter(has_neg) 
-
-paste(nrow(neg), "datasets have negative R2 values:", 
-      paste(neg$dataset, collapse = ", "), collapse = " ")
-```
-
-```{r}
-Rcor_df |> 
-  dplyr::arrange(dataset, type) |> 
-  DT::datatable()
-```
-
-
-The table below summarizes these statistics.
-
-```{r}
-Rcor_df |> 
-  dplyr::group_by(type) |> 
-  dplyr::summarize(mean_R2 = mean(R2),
-                   median_R2 = median(R2),
-                   sd_R2 = sd(R2),
-                   prop_signif = sum(signif)/length(unique(dataset))) |> 
-  DT::datatable()
-```

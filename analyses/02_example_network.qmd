@@ -8,19 +8,23 @@ editor: source
 author: 
   - name: "Lisa Nicvert"
     orcid: 0009-0006-5763-0865
+  - name: "Hervé Fritz"
+    orcid: 0000-0002-7106-3661
   - name: "Stéphane Dray"
     orcid: 0000-0003-0153-1105
 embed-resources: true
-code-fold: true
 params:
-  thr: 3
+  thr: 0
   colco: "darkred"
   colli: "cornflowerblue"
   dataset: "Peru1"
 bibliography: references.bib
 ---
 
-```{r, message = FALSE}
+```{r}
+#| code-fold: true
+#| output: false
+
 library(here)
 
 library(ggplot2)
@@ -41,11 +45,11 @@ set.seed(42)
 
 ## Introduction
 
-In this document, we analyze data from ANDEAN frugivory dataset [@dehlinga] with constrained multivariate methods: CCA and dc-CA.
+In this document, we analyze dataset `r params$dataset` from ANDEAN frugivory dataset [@dehlinga] with correspondence analyses methods.
 
 ## Read data
 
-First, we read data (rearranged to filter traits and interactions).
+First, read formatted data.
 
 ```{r}
 interactions <- read.csv(file.path(input_folder, "interactions.csv"))
@@ -53,7 +57,7 @@ plant_traits <- read.csv(file.path(input_folder, "plant_traits.csv"))
 bird_traits <- read.csv(file.path(input_folder, "bird_traits.csv"))
 ```
 
-### Format data
+## Format data
 
 We remove some redundant traits (`BillLength` and `meanL`).
 
@@ -66,7 +70,7 @@ plant_traits <- plant_traits |>
   dplyr::select(-meanL)
 ```
 
-Then, we remove the rows where there are `NA` in the traits.
+Then, we remove the species that have `NA` traits.
 
 ```{r filter_out_incomplete_traits}
 bird_traits <- bird_traits |>  
@@ -80,26 +84,27 @@ bird_traits_codes <- bird_traits
 plant_traits_codes <- plant_traits
 ```
 
-We format the interaction matrix and remove the column with species names.
+We format the interaction matrix and filter out species that interact with $\leq$ `r params$thr` partners.
 
-```{r format_data}
-#|code-fold: show
-
+```{r filter_data}
+# Convert data.frame to matrix
 interactions <- df_to_matrix(interactions,
                              rows = "plant_species_code",
                              columns = "bird_species_code")
 
+# Remove species that interact with few partners
 interactions <- filter_matrix(interactions, thr = params$thr)
 
 plant_traits <- plant_traits |> 
   dplyr::filter(plant_species_code %in% rownames(interactions))
 
+bird_traits <- bird_traits |> 
+  dplyr::filter(bird_species_code %in% colnames(interactions))
+
+# Format data
 plant_traits <- plant_traits |> 
   tibble::column_to_rownames("plant_species_code") |> 
   dplyr::select(-plant_species)
-
-bird_traits <- bird_traits |> 
-  dplyr::filter(bird_species_code %in% colnames(interactions))
 
 bird_traits <- bird_traits |> 
   tibble::column_to_rownames("bird_species_code") |> 
@@ -107,6 +112,7 @@ bird_traits <- bird_traits |>
 ```
 
 ```{r}
+# Rename columns
 plant_traits_labels <- c("fruit diameter", "plant height", "crop mass")
 names(plant_traits_labels) <- colnames(plant_traits)
 
@@ -115,6 +121,7 @@ names(bird_traits_labels) <- colnames(bird_traits)
 ```
 
 ```{r}
+# Get data dimensions
 r <- nrow(interactions)
 c <- ncol(interactions)
 l <- ncol(plant_traits)
@@ -128,108 +135,10 @@ colrow <- viridisLite::viridis(nrow(interactions), option = "G", end = 0.9)
 colco <- viridisLite::viridis(ncol(interactions), option = "F", end = 0.9)
 ```
 
-### Export data
-
-```{r}
-# Birds
-bird_traits_codes$bird_species <- gsub("_", " ",
-                                       bird_traits_codes$bird_species)
-bird_traits_codes$bird_species <- paste0("\\textit{",
-                                         bird_traits_codes$bird_species,"}")
-
-if (!dir.exists(out_folder)) {
-  dir.create(out_folder, recursive = TRUE, showWarnings = FALSE)
-}
-
-write.table(bird_traits_codes, sep = " & ", 
-            eol = " \\\\\n",
-            quote = FALSE, 
-            col.names = FALSE, row.names = FALSE, 
-            file = file.path(out_folder, "birds_latex.txt"))
-
-# Plants
-plant_traits_codes$plant_species <- gsub("_", " ",
-                                         plant_traits_codes$plant_species)
-plant_traits_codes$plant_species <- paste0("\\textit{",
-                                             plant_traits_codes$plant_species,"}")
-
-write.table(plant_traits_codes, sep = " & ", 
-            eol = " \\\\\n",
-            quote = FALSE, 
-            col.names = FALSE, row.names = FALSE, 
-            file = file.path(out_folder, "plants_latex.txt"))
-```
-
-## Traits distribution
-
-Here, we plot histograms of trait values.
-
-```{r, fig.width=8, fig.height=3}
-plant_traits_labels_units <- paste(plant_traits_labels, 
-                                   c("(mm)", "(m)", "(g)"))
-names(plant_traits_labels_units) <- names(plant_traits)
-
-glist <- list()
-for (colname in colnames(plant_traits)) {
-  gr <- ggplot(plant_traits) +
-    geom_histogram(aes(x = .data[[colname]]),
-                 fill = params$colli,
-                 col =  params$colli,
-                 alpha = 0.8) +
-    annotate("segment", 
-             x = median(plant_traits[[colname]]),
-             xend = median(plant_traits[[colname]]),
-             y = 0, yend = Inf,
-             linetype = "dashed") +
-    xlab(plant_traits_labels_units[colname]) +
-    ylab("species count") +
-    theme_linedraw()
-  
-  glist <- c(glist, list(gr))
-}
-
-wrap_plots(glist) +  
-  plot_layout(axis_titles = "collect_y")
-
-ggsave(file.path(figures_folder, "FigB1a_plant_traits.png"),
-       width = 20, height = 7, units = "cm")
-```
-
-```{r, fig.width=8, fig.height=3}
-bird_traits_labels_units <- paste(bird_traits_labels, 
-                                   c("", "(mm)", "(g)"))
-names(bird_traits_labels_units) <- names(bird_traits_labels)
-
-glist <- list()
-
-for (colname in colnames(bird_traits)) {
-  g <- ggplot(bird_traits) +
-    geom_histogram(aes(x = .data[[colname]]),
-                   fill = params$colco,
-                   col =  params$colco,
-                   alpha = 0.8) +
-    annotate("segment", 
-             x = median(bird_traits[[colname]]),
-             xend = median(bird_traits[[colname]]),
-             y = 0, yend = Inf,
-             linetype = "dashed") +
-    xlab(bird_traits_labels_units[colname]) +
-    ylab("species count") +
-    theme_linedraw()
-  
-  glist <- c(glist, list(g))
-}
-
-wrap_plots(glist) +  
-  plot_layout(axis_titles = "collect_y")
-
-ggsave(file.path(figures_folder, "FigB1b_bird_traits.png"),
-       width = 20, height = 7, units = "cm")
-```
 
 ## CA
 
-First, we perform CA: this will be useful for variance partitioning and for computing CCA and dc-CA with ade4.
+First, perform simple correspondence analysis (CA): this will be useful for variance partitioning and for computing CCA and dc-CA with ade4.
 
 ```{r}
 ca <- dudi.coa(interactions, 
@@ -237,15 +146,9 @@ ca <- dudi.coa(interactions,
                nf = min(c(r - 1, c - 1)))
 ```
 
-```{r}
-ca_inertia <- sum(ca$eig)
-```
-
-The total inertia is `r round(ca_inertia, 5)`.
-
 ## CCA with plant traits
 
-Then, we constrain axes with plant traits.
+Then, perform constrained correspondence analysis (CCA) constrain with plant traits.
 
 ```{r}
 cca_plants <- pcaiv(dudi = ca, 
@@ -254,18 +157,25 @@ cca_plants <- pcaiv(dudi = ca,
                     nf = min(c(r - 1, c, l)))
 ```
 
-
 ```{r, fig.height=4, fig.width=6}
-plot_eig(sqrt(cca_plants$eig)) + ggtitle("Square-root of the eigenvalues of the CCA (correlations)")
+#| code-fold: true
 
-plot_eig(cca_plants$eig/sum(ca$eig)) + 
+plot_eig(sqrt(cca_plants$eig), showrank = TRUE) + 
+  ggtitle("Square-root of the eigenvalues of the CCA (correlations)")
+
+plot_eig(cca_plants$eig/sum(ca$eig), showrank = TRUE) + 
   ggtitle("Part of explained variance for each axis of the CCA")
 ```
+
+Correlations are decent (0.3-0.5), but the part of explained variation for each axis is very low.
+
 
 ### Correlation circle
 
 ```{r}
-# We invert second axis to match CA
+#| code-fold: true
+
+# We invert second axis to match dcCA
 cor <- cca_plants$cor
 cor$RS2 <- -cor$RS2
 plot_corcircle(cor = cor, 
@@ -277,70 +187,33 @@ ggsave(file.path(figures_folder, "Fig_C2a_cca_plants_corcircle.png"),
        width = 16, height = 13, units = "cm")
 ```
 
-The correlation circle is useful to interpret axes (below).
-
 ### Biplots
 
-We plot the biplots with an appropriate scaling to represent species niches:
-
--   to represent plants niches: plants WA (weighted averaging) scores $U^\star$ (`ls`) at the mean of birds scores $V$ (`c1`).
--   to represent bird niches: birds WA scores ($V^\star$) (`co`) at the mean of plants LC (linear combinations) scores $Z$ (`l1`).
-
-Here, it makes more sense to plot birds niches.
+Let's plot birds WA scores ($V^\star$) (`co`) at the mean of plants LC (linear combinations) scores $Z$ (`l1`) (bird niches).
 
 ```{r}
-# ls <- cca_plants$ls
-# ls[, 2] <- - ls[, 2]
-# 
-# c1 <- cca_plants$c1
-# c1[, 2] <- - c1[, 2]
+#| code-fold: true
 
+# Plot bird niches
+# Second axis is inverted to match dcCA
 l1 <- cca_plants$l1
 l1[, 2] <- - l1[, 2]
 
 co <- cca_plants$co
 co[, 2] <- - co[, 2]
 
-# Plant niches
-# multiplot(indiv_row = ls,
-#           indiv_col = c1,
-#           eig = cca_plants$eig,
-#           row_color = params$colli,
-#           col_color = params$colco,
-#           max.overlaps = 15) +
-#   ggtitle("Plant niches")
 
-# Bird niches
 multiplot(indiv_row = l1,
           indiv_col = co, 
           eig = cca_plants$eig, 
           row_color = params$colli, 
           col_color = params$colco, 
+          xlim = c(-6, 6),
           max.overlaps = 15)
 ggsave(file.path(figures_folder, "Fig_2Cb_cca_plants_bniches.png"),
        width = 13, height = 13, units = "cm")
 ```
-This method provides two ways of computing plants' coordinates:
-
-- from their traits: the LC scores $Z_0$ (non-normalized) (`li`) 
-- from birds' scores ("latent traits"): the WA scores $U^\star$ (`ls`)
-
-Contrary to CA, these two sets of scores are not proportional. Hence, measuring the difference between these scores provides a way to see if plant traits are able to explain the observed interactions well: if both sets of scores are close, it means that plants' traits explain well the observed patterns, i.e. that they contribute to matching with unknown birds traits.
-
-
-```{r}
-ls <- cca_plants$ls
-ls[, 2] <- - ls[, 2]
-
-li <- cca_plants$li
-li[, 2] <- - li[, 2]
-
-s.match(ls, li, xax = 1, yax = 2, 
-        plabels.col = params$colli)
-# ls -> li
-```
-The WA scores are more dispersed than the LC scores: plants traits seem to draw them towards the center. The change of scores happens mostly along axis 2.
-
+We could also represent plants niches with plants WA (weighted averaging) scores $U^\star$ (`ls`) at the mean of birds scores $V$ (`c1`).
 
 ## CCA with bird traits
 
@@ -359,6 +232,8 @@ cca_birds <- pcaiv(dudi = ca_t,
 
 
 ```{r, fig.height=4, fig.width=6}
+#| code-fold: true
+
 plot_eig(sqrt(cca_birds$eig)) + ggtitle("Square-root of the eigenvalues of the CCA (correlations)")
 
 plot_eig(cca_birds$eig/sum(ca$eig)) + 
@@ -368,6 +243,8 @@ plot_eig(cca_birds$eig/sum(ca$eig)) +
 ### Correlation circle
 
 ```{r}
+#| code-fold: true
+
 cor <- cca_birds$cor
 cor[, 2]  <- -cor[, 2]
 plot_corcircle(cor = cor, 
@@ -379,22 +256,14 @@ ggsave(file.path(figures_folder, "Fig_D1a_cca_birds_corcircle.png"),
        width = 14, height = 11, units = "cm")
 ```
 
-The correlation circle is useful to interpret axes (below).
-
 ### Biplots
 
-We plot the biplots with a scaling appropriate to represent species niches:
-
--   to represent plant niches: plants WA scores ($V^\star$) (`co`) at the mean of birds LC scores $Z$ (`l1`).
--   to represent birds niches: birds WA scores $U^\star$ (`ls`) at the mean of plant scores $V$ (`c1`).
+We plot plants WA scores ($V^\star$) (`co`) at the mean of birds LC scores $Z$ (`l1`) (plants niches).
 
 ```{r}
-# ls <- cca_birds$ls
-# ls[, 2] <- - ls[, 2]
-# 
-# c1 <- cca_birds$c1
-# c1[, 2] <- - c1[, 2]
+#| code-fold: true
 
+# Invert first axis
 l1 <- cca_birds$l1
 l1[, 2] <- - l1[, 2]
 
@@ -407,41 +276,13 @@ multiplot(indiv_row = l1,
           eig = cca_birds$eig, 
           row_color = params$colco, 
           col_color = params$colli, 
+          xlim = c(-2, 7),
+          ylim = c(-3, 5),
           max.overlaps = 15) +
   ggtitle("Plant niches")
 ggsave(file.path(figures_folder, "Fig_D1b_cca_birds_pniches.png"),
        width = 13, height = 11, units = "cm")
-
-# Birds niches
-# multiplot(indiv_row = ls, # WA rows = birds
-#           indiv_col = c1, 
-#           eig = cca_birds$eig, 
-#           row_color = params$colco, 
-#           col_color = params$colli, 
-#           max.overlaps = 15) +
-#   ggtitle("Bird niches")
 ```
-
-For the same reason as for CCA constrained with plants traits, birds are represented by two sets of scores:
-
-- from their traits: the LC scores $Z_0$ (non-normalized) (`li`) 
-- from plants' scores ("latent traits"): the WA scores $U^\star$ (`ls`)
-
-```{r}
-ls <- cca_birds$ls
-ls[, 2] <- - ls[, 2]
-
-li <- cca_birds$li
-li[, 2] <- - li[, 2]
-
-s.match(ls, li, xax = 1, yax = 2, 
-        plabels.col = params$colco)
-# ls -> li
-```
-
-Same as plants, birds scores are drawn towards the origin with LC scores. The change of scores happens mostly along axis 1.
-
-
 ## dc-CA
 
 Now we perform a dc-CA, constrained by plant and bird species traits.
@@ -455,6 +296,8 @@ dcca <- dpcaiv(dudi = ca,
 ```
 
 ```{r, fig.height=4, fig.width=6}
+#| code-fold: true
+
 plot_eig(sqrt(dcca$eig)) + ggtitle("Square-roots of eigenvalues of the dc-CA")
 
 plot_eig(dcca$eig/sum(ca$eig)) + 
@@ -464,6 +307,8 @@ plot_eig(dcca$eig/sum(ca$eig)) +
 ### Correlation circle
 
 ```{r corcircle}
+#| code-fold: true
+
 corR <- dcca$corR
 corR[, 2] <- -corR[, 2] 
 
@@ -490,6 +335,8 @@ We plot the biplots with a scaling appropriate to represent species niches:
 -   to represent bird niches: birds WA scores ($V^\star$) (`lsQ`) at the mean of plants LC scores $U$ (`l1`).
 
 ```{r}
+#| code-fold: true
+
 lsR <- dcca$lsR
 lsR[, 2] <- - lsR[, 2]
 
@@ -502,8 +349,8 @@ l1[, 2] <- - l1[, 2]
 lsQ <- dcca$lsQ
 lsQ[, 2] <- - lsQ[, 2]
 
-xlim <- c(-2, 7)
-ylim <- c(-4, 7)
+xlim <- c(-3, 6)
+ylim <- c(-3, 6)
 grad <- 2
 
 # Plant niches
@@ -522,7 +369,7 @@ ggsave(file.path(figures_folder, "Fig_3b_dcca_pniches.png"),
 
 # Bird niches
 multiplot(indiv_row = l1,
-          # indiv_col = lsQ,
+          indiv_col = lsQ,
           eig = dcca$eig, 
           row_color = params$colli, 
           col_color = params$colco,
@@ -535,30 +382,18 @@ ggsave(file.path(figures_folder, "Fig_3c_dcca_bniches.png"),
        width = 11, height = 11, units = "cm")
 ```
 
-Here, birds and plants are represented by two sets of scores each:
-
-- For birds:
-  - from their traits: LC scores $V$ (`c1`)
-  - from plants' traits: WA scores ($V^\star$) (`lsQ`)
-- For plants:
-  - from their traits: LC scores $U$ (`l1`)
-  - from plants' traits: WA scores ($U^\star$) (`lsR`)
-
-Birds' scores are closer from each other than plants' scores. This suggests that 
-birds' traits approximate birds' niches defined with plant traits better than 
-the reverse.
-
-
 ## Variance decomposition
 
 The analyses above are linked through the following variance decomposition:
 
-$$\underbrace{I(\text{total})}_{[t]} = \underbrace{I(\text{birds traits})}_{[c]} + \underbrace{I(\text{plants traits})}_{[r]} + \underbrace{I(\text{matching})}_{[m]} + \underbrace{I(\text{residual})}_{[z]}$$
+$$\underbrace{I(\text{total})}_{[t]} = \underbrace{I(\text{birds traits})}_{[c]} + \underbrace{I(\text{plants traits})}_{[a]} + \underbrace{I(\text{matching})}_{[b]} + \underbrace{I(\text{residual})}_{[d]}$$
 where $I(x)$ denotes the inertia of $x$ (also denoted by letters between brackets).
 
 ### Figure
 
 ```{r}
+#| code-fold: true
+
 # Graph parameters
 xmax <- 15 
 ymax <- 10
@@ -632,11 +467,63 @@ vp <- dvaripart(Y = ca,
 vp
 ```
 
-## Difference between traits and niches
+## Residuals (Appendix E)
 
-We can evaluate the quality of both traits sets:
+For constrained analyses, we have two sets of scores for constrained species: comparing them is a way to measure the model fit.
+
+### CCA with plant traits
+
+Let's plot plant coordinates:
+
+- from their traits: the LC scores $Z_0$ (non-normalized) (`li`) 
+- from birds' scores ("latent traits"): the WA scores $U^\star$ (`ls`)
 
 ```{r}
+#| code-fold: true
+
+ls <- cca_plants$ls
+ls[, 2] <- - ls[, 2]
+
+li <- cca_plants$li
+li[, 2] <- - li[, 2]
+
+# ls -> li
+s.match(ls, li, xax = 1, yax = 2, 
+        plabels.col = params$colli)
+```
+
+### CCA with bird traits
+
+Let's plot bird coordinates:
+
+- from their traits: the LC scores $Z_0$ (non-normalized) (`li`) 
+- from plants' scores ("latent traits"): the WA scores $U^\star$ (`ls`)
+
+```{r}
+#| code-fold: true
+
+ls <- cca_birds$ls
+ls[, 2] <- - ls[, 2]
+
+li <- cca_birds$li
+li[, 2] <- - li[, 2]
+
+# ls -> li
+s.match(ls, li, xax = 1, yax = 2, 
+        plabels.col = params$colco)
+```
+
+
+### dcCA
+
+Now, let's plot bird and plants coordinates:
+
+- from their traits: the LC scores $U$ and $V$ (non-normalized) (respectively `li` and `co`) 
+- from their "latent traits: the WA scores $U^\star$ and $V^\star$ (respectively `lsR` and `lsQ`)
+
+```{r}
+#| code-fold: true
+
 li <- dcca$li
 li[, 2] <- - li[, 2]
 
@@ -651,6 +538,7 @@ axis_title_padding <- 1.3
 padding <- 1
 
 # Difference between niche and traits for plants
+# lsR -> li
 png(file.path(figures_folder, "Fig_Eb_diff_plants.png"),
     width = 15, height = 15, units = "cm", res = 300)
 s.match(lsR, li, xax = 1, yax = 2, 
@@ -663,9 +551,9 @@ s.match(lsR, li, xax = 1, yax = 2,
                              left.padding = padding,
                              right.padding = padding))
 dev.off()
-# lsR -> li
 
 # Difference between niche and traits for birds
+# lsQ -> li
 png(file.path(figures_folder, "Fig_Ea_diff_birds.png"),
     width = 15, height = 15, units = "cm", res = 300)
 s.match(lsQ, co, xax = 1, yax = 2, 
@@ -677,7 +565,110 @@ s.match(lsQ, co, xax = 1, yax = 2,
                              left.padding = padding,
                              right.padding = padding))
 dev.off()
-# lsQ -> li
 ```
 
+## Species details tables (Appendix A)
+
+The code below exports trait tables with species names and codes.
+
+```{r}
+# Birds
+bird_traits_codes$bird_species <- gsub("_", " ",
+                                       bird_traits_codes$bird_species)
+bird_traits_codes$bird_species <- paste0("\\textit{",
+                                         bird_traits_codes$bird_species,"}")
+
+if (!dir.exists(out_folder)) {
+  dir.create(out_folder, recursive = TRUE, showWarnings = FALSE)
+}
+
+write.table(bird_traits_codes, sep = " & ", 
+            eol = " \\\\\n",
+            quote = FALSE, 
+            col.names = FALSE, row.names = FALSE, 
+            file = file.path(out_folder, "birds_latex.txt"))
+
+# Plants
+plant_traits_codes$plant_species <- gsub("_", " ",
+                                         plant_traits_codes$plant_species)
+plant_traits_codes$plant_species <- paste0("\\textit{",
+                                             plant_traits_codes$plant_species,"}")
+
+write.table(plant_traits_codes, sep = " & ", 
+            eol = " \\\\\n",
+            quote = FALSE, 
+            col.names = FALSE, row.names = FALSE, 
+            file = file.path(out_folder, "plants_latex.txt"))
+```
+
+## Traits distribution (Appendix B)
+
+Plot histograms of trait values.
+
+```{r, fig.width=8, fig.height=3}
+#| code-fold: true
+
+plant_traits_labels_units <- paste(plant_traits_labels, 
+                                   c("(mm)", "(m)", "(g)"))
+names(plant_traits_labels_units) <- names(plant_traits)
+
+glist <- list()
+for (colname in colnames(plant_traits)) {
+  gr <- ggplot(plant_traits) +
+    geom_histogram(aes(x = .data[[colname]]),
+                 fill = params$colli,
+                 col =  params$colli,
+                 alpha = 0.8) +
+    annotate("segment", 
+             x = median(plant_traits[[colname]]),
+             xend = median(plant_traits[[colname]]),
+             y = 0, yend = Inf,
+             linetype = "dashed") +
+    xlab(plant_traits_labels_units[colname]) +
+    ylab("species count") +
+    theme_linedraw()
+  
+  glist <- c(glist, list(gr))
+}
+
+wrap_plots(glist) +  
+  plot_layout(axis_titles = "collect_y")
+
+ggsave(file.path(figures_folder, "FigB1a_plant_traits.png"),
+       width = 20, height = 7, units = "cm")
+```
+
+```{r, fig.width=8, fig.height=3}
+#| code-fold: true
+
+bird_traits_labels_units <- paste(bird_traits_labels, 
+                                   c("", "(mm)", "(g)"))
+names(bird_traits_labels_units) <- names(bird_traits_labels)
+
+glist <- list()
+
+for (colname in colnames(bird_traits)) {
+  g <- ggplot(bird_traits) +
+    geom_histogram(aes(x = .data[[colname]]),
+                   fill = params$colco,
+                   col =  params$colco,
+                   alpha = 0.8) +
+    annotate("segment", 
+             x = median(bird_traits[[colname]]),
+             xend = median(bird_traits[[colname]]),
+             y = 0, yend = Inf,
+             linetype = "dashed") +
+    xlab(bird_traits_labels_units[colname]) +
+    ylab("species count") +
+    theme_linedraw()
+  
+  glist <- c(glist, list(g))
+}
+
+wrap_plots(glist) +  
+  plot_layout(axis_titles = "collect_y")
+
+ggsave(file.path(figures_folder, "FigB1b_bird_traits.png"),
+       width = 20, height = 7, units = "cm")
+```
 

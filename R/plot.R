@@ -182,7 +182,7 @@ plot_eig <- function(eigenvalues, showrank = FALSE) {
     geom_col(aes(y = eigenvalues, x = factor(1:length(eigenvalues)))) +
     theme_linedraw() +
     scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-    xlab("Rank") +
+    xlab("Axis") +
     ylab("Eigenvalues")
 
   if (!showrank) {

@@ -8,14 +8,20 @@ editor: source
 author: 
   - name: "Lisa Nicvert"
     orcid: 0009-0006-5763-0865
+  - name: "Hervé Fritz"
+    orcid: 0000-0002-7106-3661
+  - name: "Stéphane Dray"
+    orcid: 0000-0003-0153-1105
 embed-resources: true
-code-fold: true
 params:
-  nrep: 3
+  nrep: 10
 bibliography: references.bib
 ---
 
 ```{r}
+#| code-fold: true
+#| output: false
+
 library(here)
 
 library(ggplot2)
@@ -26,7 +32,10 @@ library(ade4)
 library(adegraphics)
 
 devtools::load_all()
+```
 
+
+```{r}
 set.seed(42)
 
 figures_folder <- here("figures")
@@ -70,29 +79,7 @@ for the same reason, the observed $R^2$ supposed to give the link between  $\mat
   
 To answer this problem, we rely on a permutation approach for testing and for correcting the $R^2$ (here, it is noted $R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}}$) (similarly to @peres-neto2006). To do that, we adapt the permutation approach proposed by @dray_testing_2008 in the context of fourth-corner analysis to dc-CA.
 
-The permutation approach proceeds as follows:
-
-- We use the following model:
-  1. predict the values of $\mathbf{L}$ with $\mathbf{R}$; $\mathbf{\hat{L}_R} = \mathbf{L} \sim \mathbf{R}$
-  2. predict the modeled values of $\mathbf{L}$ with $\mathbf{Q}$; $\mathbf{\hat{L}_{R,Q}} = \mathbf{\hat{L}_R}^\top \sim \mathbf{Q}$
-- Then, to test the link between $\mathbf{L}$ and 
-$\mathbf{R}$, we permute the rows of $\mathbf{R}$ in step 1. - After that, to test the link between $\mathbf{L}$ and $\mathbf{Q}$, we permute the rows of $\mathbf{Q}$ in step 2.
-
-We then obtain two different p-values for each batch of permutations: to test the link, we decide to be conservative, and keep only the highest p-value.
-
-
-We also get two different values of $R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}}$ for each run of simulations. We then combine these values to obtain a corrected $R^2$, noted $R^2_{(\mathbf{L}|\mathbf{R},\mathbf{Q})\text{perm}}$, given by:
-
-$$R^2_{(\mathbf{L}|\mathbf{R},\mathbf{Q})\text{perm}} = 1 - \frac{1 - R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}}}{1-\bar{R}_{\text{perm}}}$$
-
-where $\bar{R}_{\text{perm}}$ is a the mean value for the values of $R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}}$ obtained with the different permutation procedures.
-
-
 ## Simulations
-
-We simulate data under a model where $\mathbf{R}$ and $\mathbf{Q}$ are linked, and permute $\mathbf{R}$ and/or $\mathbf{Q}$ to simulate cases where only $\mathbf{R}$ or $\mathbf{Q}$ are linked to $\mathbf{L}$.
-
-Then, we apply our permutation test and $R^2$ correction for each of these cases, expecting $R^2_{\mathbf{L}|\mathbf{R},\mathbf{Q}} \neq 0$ and a false positive rate inferior to $\alpha$ only when $\mathbf{R}$ and $\mathbf{Q}$ are linked.
 
 ```{r}
 # Simulation parameters
@@ -113,10 +100,12 @@ sdlog <- log(1.5)
 
 
 ```{r}
+#| eval: false
+
 res_df <- data.frame()
 for (rep in 1:params$nrep) {
   # Simulate data ---
-  print(rep)
+  print(paste0("Simu ", rep, "/", params$nrep, "----------"))
   consumerab <- rlnorm(nconsumer, 
                      meanlog = meanlog, 
                      sdlog = sdlog)
@@ -209,53 +198,16 @@ res_df <- readRDS(file.path(output_folder, "R2.rds"))
 
 ## Results
 
+### Plot R2
+
 ```{r}
+# Prepare data
 res_df$perm_label <- factor(res_df$perm,
                             levels = c("noperm", "rperm", 
                                        "cperm", "rcperm"),
                             labels = c("rows + columns", "columns", 
                                        "rows", "none"))
 
-pval_prop <- res_df |> 
-  dplyr::mutate(signif = pval < 0.05) |> 
-  dplyr::group_by(perm_label) |> 
-  dplyr::summarize(prop_signif = sum(signif)/n()) |> 
-  dplyr::mutate(prop_signif_label = ifelse(prop_signif < 0.001 & prop_signif != 0,
-                                           "< 0.001", as.character(round(prop_signif, 3))))
-
-ggplot(res_df) +
-  geom_boxplot(aes(x = pval, y = perm_label)) +
-  geom_jitter(aes(x = pval, y = perm_label), 
-              width = 0, height = 0.25) +
-  geom_vline(xintercept = 0.05, linetype = "dashed") +
-  geom_label(data = pval_prop,
-            aes(x = 0.05, y = perm_label,
-                label = prop_signif_label),
-                hjust = 0, nudge_x = 0.02) +
-  scale_y_discrete(limits = rev) +
-  xlim(0, 1) +
-  xlab("p-value") +
-  ylab("Link type") +
-  theme_minimal() +
-  theme()
-
-ggsave(file.path(figures_folder, "Fig_F1b_pval_distri.png"),
-       width = 14, height = 10, units = "cm", 
-       bg = "white")
-```
-
-p-values are small only for the data that was not permuted.
-
-
-```{r}
-res_df |> 
-  group_by(perm_label) |> 
-  summarize(R2_obs = mean(R2_obs), .groups = "drop")
-```
-
-Let's see if the corrections improve the matter:
-
-```{r}
 res_R2 <- res_df |> 
   dplyr::select(perm, perm_label, starts_with("R2")) |> 
   tidyr::pivot_longer(cols = starts_with("R2"),
@@ -272,6 +224,7 @@ R2_mean <- res_R2 |>
   dplyr::mutate(R2_label = ifelse(R2_mean < 0.001,
                                   "< 0.001", as.character(round(R2_mean, 3))))
 
+# Plot
 ggplot(res_R2) +
   geom_boxplot(aes(x = R2, y = perm_label, color = type_label),
                position = position_dodge(0.8)) +
@@ -299,10 +252,54 @@ ggsave(file.path(figures_folder, "Fig_E1b_R2_comparison.png"),
        width = 14, height = 10, units = "cm", bg = "white")
 ```
 
-Our correction reduces the R2, and allows to infer no signal when there is none, in particular in cases when only rows or columns were permuted.
-
 ```{r}
 res_R2 |> 
-  group_by(perm, type) |> 
-  summarize(R2 = mean(R2), .groups = "drop")
+  group_by(perm_label, type_label) |> 
+  summarize(R2 = mean(R2), .groups = "drop") |> 
+  DT::datatable() |> 
+  DT::formatRound(columns = "R2")
+```
+
+### Plot pvalues
+
+```{r}
+# Prepare data
+pval_prop <- res_df |> 
+  dplyr::mutate(signif = pval < 0.05) |> 
+  dplyr::group_by(perm_label) |> 
+  dplyr::summarize(prop_signif = sum(signif)/n()) |> 
+  dplyr::mutate(prop_signif_label = ifelse(prop_signif < 0.001 & prop_signif != 0,
+                                           "< 0.001", as.character(round(prop_signif, 3))))
+```
+
+```{r}
+#| code-fold: true
+ggplot(res_df) +
+  geom_boxplot(aes(x = pval, y = perm_label)) +
+  geom_jitter(aes(x = pval, y = perm_label), 
+              width = 0, height = 0.25) +
+  geom_vline(xintercept = 0.05, linetype = "dashed") +
+  geom_label(data = pval_prop,
+            aes(x = 0.05, y = perm_label,
+                label = prop_signif_label),
+                hjust = 0, nudge_x = 0.02) +
+  scale_y_discrete(limits = rev) +
+  xlim(0, 1) +
+  xlab("p-value") +
+  ylab("Link type") +
+  theme_minimal() +
+  theme()
+
+ggsave(file.path(figures_folder, "Fig_F1b_pval_distri.png"),
+       width = 14, height = 10, units = "cm", 
+       bg = "white")
+```
+
+```{r}
+# Show tabulated results
+res_df |> 
+  group_by(perm_label) |> 
+  summarize(pvalue_mean = mean(pval), .groups = "drop") |> 
+  DT::datatable() |> 
+  DT::formatRound(columns = "pvalue_mean")
 ```
