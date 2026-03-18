@@ -344,7 +344,7 @@ multiplot <- function(indiv_row = NULL, indiv_col = NULL,
                  vjust = ifelse(var_row[, y] > 0, 0, 1))
   }
 
-  g
+  g + theme(panel.grid = element_line(colour = "grey"))
 }
 
 #' Plot correlation circle
@@ -464,8 +464,10 @@ plot_corcircle <- function(cor,
     # See https://github.com/tidyverse/ggplot2/issues/2536
     g <- g +
       theme(panel.border = element_blank(),
-            panel.background = element_rect(colour = "black"))
+            panel.background = element_rect(colour = "black"),
+            panel.grid = element_line(colour = "grey"))
+  } else {
+    g <- g + theme(panel.grid = element_line(colour = "grey"))
   }
-
   g
 }
