@@ -12,7 +12,7 @@ colco <- "darkred"
 colli <- "cornflowerblue"
 
 # Define threshold to filter interactions
-thr <- 0
+thr <- 1
 
 # Run analyses ------------------------------------------------------------
 

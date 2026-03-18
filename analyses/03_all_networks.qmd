@@ -14,7 +14,7 @@ author:
     orcid: 0000-0003-0153-1105
 embed-resources: true
 params:
-  thr: 0
+  thr: 1
   colco: "darkred"
   colli: "cornflowerblue"
 bibliography: references.bib
@@ -34,6 +34,8 @@ library(ade4)
 library(adegraphics)
 
 devtools::load_all()
+
+set.seed(42)
 ```
 
 ```{r}
@@ -64,6 +66,11 @@ for (dir in dirs) {
   bt <- read.csv(file.path(input_folder, dir, 
                               "bird_traits.csv"))
   
+  # Remove unused traits
+  pt <- pt[, -which(colnames(pt) == "meanL")]
+  bt <- bt[, -which(colnames(bt) == "BillLength")]
+  
+  # Store variables
   inter_list[[dir]] <- inter
   pt_list[[dir]] <- pt
   bt_list[[dir]] <- bt
@@ -146,7 +153,8 @@ for (i in 1:length(inter_list)) {
                   dfR = pt, dfQ = bt)
   
   # Store R2 values and p-values
-  R2 <- vp$R2.adj
+  R2_corr <- vp$R2.adj
+  R2_raw <- vp$R2
   pval <- vp$test$pvalue
   
   # Format results
@@ -154,9 +162,12 @@ for (i in 1:length(inter_list)) {
                      type = c("residual", 
                               "bird_traits", "plant_traits",
                               "matching"),
-                     R2 = c(R2["d"], 
-                            R2["c"], R2["a"], 
-                            R2["b"]),
+                     R2_corr = c(R2_corr["d"], 
+                                 R2_corr["c"], R2_corr["a"], 
+                                 R2_corr["b"]),
+                     R2_raw = c(R2_raw["d"], 
+                                R2_raw["c"], R2_raw["a"], 
+                                R2_raw["b"]),
                      p = c(NA, pval[2], pval[1],
                            max(pval[c(3, 4)])))
   
@@ -171,34 +182,39 @@ First, check that the $R^2$ sum to one.
 ```{r}
 Rcor_df |> 
   dplyr::group_by(dataset) |> 
-  dplyr::summarize(sum = sum(R2))
+  dplyr::summarize(sum = sum(R2_corr)) |> 
+  DT::datatable()
 
-# Ecuador 3 is of dimension 3x5, so there are too many traits and R2 = 1
-# we remove it
-Rcor_df <- Rcor_df |> 
-  dplyr::filter(dataset != "ANDEAN_Ecuador3")
+# Filter out datasets with NAs
+is_na <- unique(Rcor_df$dataset[is.na(Rcor_df$R2_corr)])
+Rcor_df <- Rcor_df |>
+  filter(!dataset %in% is_na)
 ```
 
 ```{r}
 # Show negative R2
 neg <- Rcor_df |> 
   dplyr::group_by(dataset) |> 
-  dplyr::summarize(has_neg = any(R2 < 0)) |> 
-  dplyr::filter(has_neg) 
+  dplyr::summarize(has_neg = any(R2_corr < 0)) |> 
+  dplyr::filter(has_neg)
 
 paste(nrow(neg), "datasets have negative R2 values:", 
       paste(neg$dataset, collapse = ", "), collapse = " ")
+
+# Filter out negative R2
+# Rcor_df <- Rcor_df |> dplyr::filter(!(dataset %in% neg$dataset))
 ```
 
 ```{r}
 # Prepare df
 Rcor_df <- Rcor_df |> dplyr::mutate(signif = p > 0.05)
 
-# Add columns
+# Format for labels
 Rcor_df <- Rcor_df |> 
-  dplyr::mutate(dataset_name = gsub("^ANDEAN_", "", dataset), .after = dataset) |> 
-  dplyr::mutate(dataset_name = gsub("_", " ", dataset_name)) |> 
-  dplyr::mutate(type_name = gsub("_", " ", type), .after = type)
+  dplyr::mutate(type_name = gsub("_", " ", type), 
+                .after = type) |> 
+  dplyr::mutate(dataset_name = gsub("_", " ", dataset), 
+                .after = dataset)
 
 # Reorder factors
 Rcor_df$type <- factor(Rcor_df$type, 
@@ -213,9 +229,11 @@ Rcor_df$type_name <- factor(Rcor_df$type_name,
 #| code-fold: true
 
 Rcor_df |> 
-  dplyr::arrange(dataset, type) |> 
+  dplyr::arrange(dataset_name, type_name) |> 
+  dplyr::select(-c(dataset, type)) |> 
   DT::datatable() |> 
-  DT::formatRound(columns = c("R2", "p"), digits = 3)
+  DT::formatRound(columns = c("R2_corr", "R2_raw", "p"), 
+                  digits = 3)
 ```
 
 ### By source of variation
@@ -224,13 +242,14 @@ Rcor_df |>
 #| code-fold: true
 
 Rcor_df |> 
-  dplyr::group_by(type) |> 
-  dplyr::summarize(mean_R2 = mean(R2),
-                   median_R2 = median(R2),
-                   sd_R2 = sd(R2),
+  dplyr::group_by(type_name) |> 
+  dplyr::summarize(mean_R2 = mean(R2_corr),
+                   median_R2 = median(R2_corr),
+                   sd_R2 = sd(R2_corr),
                    prop_signif = sum(signif)/length(unique(dataset))) |> 
   DT::datatable() |> 
-  DT::formatRound(columns = c("mean_R2", "median_R2", "sd_R2"), digits = 3)
+  DT::formatRound(columns = c("mean_R2", "median_R2", "sd_R2"), 
+                  digits = 3)
 ```
 
 ### Plot
@@ -244,13 +263,14 @@ coltype <- viridisLite::viridis(n = length(levels(Rcor_df$type_name)),
 names(coltype) <- levels(Rcor_df$type_name)
 
 # Dataset order
-subset <- Rcor_df[Rcor_df$type == "residual", ]
-ord <- order(subset$R2[subset$type == "residual"])
+subset <- Rcor_df[Rcor_df$type_name == "residual", ]
+ord <- order(subset$R2_corr[subset$type_name == "residual"])
 dataset_order <- subset$dataset_name[rev(ord)]
 
 Rcor_df_bar <- Rcor_df
 Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name, 
-                                   levels = dataset_order, ordered = TRUE)
+                                   levels = dataset_order, 
+                                   ordered = TRUE)
 ```
 
 
@@ -260,7 +280,8 @@ Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name,
 
 # Plot by dataset
 (gbar <- ggplot(Rcor_df_bar,
-                aes(y = dataset_name, x = R2, fill = type_name)) +
+                aes(y = dataset_name, x = R2_corr, 
+                    fill = type_name)) +
   geom_col() +
   geom_vline(xintercept = c(0, 1), linetype = "dashed") +
   scale_fill_manual(values = coltype, name = "Origin of variation") +
@@ -278,12 +299,12 @@ Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name,
 # Plot by source of variation
 (gbox <- ggplot(Rcor_df,
                aes(y = forcats::fct_rev(type_name), 
-                   x = R2, color = type_name)) +
+                   x = R2_corr, color = type_name)) +
   geom_boxplot(show.legend = FALSE) +
   geom_jitter(width = 0, height = 0.2,
               show.legend = FALSE) +
-  stat_summary(fun = "median", 
-               geom = "label", 
+  stat_summary(fun = "median",
+               geom = "label",
                aes(label = round(after_stat(x), 3)),
                size = 3,
                show.legend = FALSE) +
@@ -298,14 +319,35 @@ Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name,
 #| code-fold: true
 
 (gbar + gbox) + 
+  # plot_annotation(title = "No filtering") +
   plot_layout(guides = 'collect',
               axis_titles = "collect") &
   theme(legend.position='bottom') &
-  scale_x_continuous(breaks = seq(0, 1, by = 0.2), 
-                     limits = c(-0.1, 1.1)) &
-  xlab(bquote("Corrected"~R^2))
+  scale_x_continuous(breaks = seq(0, 1, by = 0.2),
+                     limits = c(-0.2, 1.2),
+                     expand = c(0, 0)) &
+  xlab(bquote("Corrected"~R^2)) 
 
-ggsave(file.path(figures_folder, "Fig4_dcca_var_networks.png"),
+ggsave(file.path(figures_folder, "Fig_4_dcca_var_networks.png"),
        width = 18, height = 10, units = "cm")
+```
+
+```{r}
+# Check if resudual R2 dimension decreases with dimension
+dims <- lapply(inter_list, dim)
+dims_prod <- sapply(dims, prod)
+dims_df <- data.frame(dataset = names(dims_prod), 
+                      dim = unname(dims_prod))
+
+matching_cor <- Rcor_df |> dplyr::filter(type == "residual")
+
+res <- matching_cor |> 
+  dplyr::left_join(dims_df, by = "dataset")
+
+ggplot(res) +
+  geom_point(aes(x = dim, y = R2_corr)) +
+  ylab("Residual correlation") +
+  xlab("Product of dimensions") +
+  theme_bw()
 ```
 
