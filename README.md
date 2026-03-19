@@ -33,6 +33,7 @@ With `renv`, R version and dependencies can be installed in a local project libr
 First, to install dependencies, open the project `RSnetwork.Rproj` with Rstudio (or launch R from the project folder in your favourite code editor or command line) and type the following command in the R console:
 
 ```{r}
+renv::init(bare = TRUE)
 renv::restore()
 ```
 
