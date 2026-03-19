@@ -100,7 +100,7 @@ sdlog <- log(1.5)
 
 
 ```{r}
-#| eval: true
+#| eval: false
 start <- Sys.time()
 res_df <- data.frame()
 for (rep in 1:params$nrep) {
@@ -228,30 +228,33 @@ R2_mean <- res_R2 |>
 
 # Plot
 ggplot(res_R2) +
-  geom_boxplot(aes(x = R2, y = perm_label, color = type_label),
-               position = position_dodge(0.8)) +
-  geom_jitter(aes(x = R2,
-                  y = perm_label, color = type_label), 
-              position = position_jitterdodge(jitter.width = 0.4,
-                                              jitter.height = 0,
-                                              dodge.width = 0.8),
-              alpha = 0.5) +
-  geom_vline(xintercept = 0.0, linetype = "dashed") +
+  gghalves::geom_half_boxplot(aes(y = R2, x = perm_label,
+                                  color = type_label),
+              position = "dodge2",
+              show.legend = FALSE) +
+  ggdist::stat_slab(aes(y = R2, x = perm_label,
+                        fill = type_label),
+                    alpha = 0.5,
+                    width = 0.8,
+                    position = position_dodge(0.8)) +
+  geom_hline(yintercept = 0.0, linetype = "dashed") +
   geom_label(data = R2_mean,
-             aes(x = R2_max, y = perm_label, 
+             aes(y = R2_max - 0.02, x = perm_label, 
                  label = R2_label,
                  col = type_label),
                  position = position_dodge(width = 0.8),
-                 hjust = 0, show.legend = FALSE) +
-  scale_y_discrete(limits = rev) +
-  # scale_x_continuous(limits = c(-0.05, 0.4)) +
-  ylab("Link type") +
-  xlab(expression(R^2)) +
-  labs(color = expression(R^2~"type")) +
-  theme_minimal()
+                 hjust = 0,
+             show.legend = FALSE) +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(limits = c(-0.05, 0.2)) +
+  xlab("Link type") +
+  ylab(expression(R^2)) +
+  labs(fill = expression(R^2~"type")) +
+  theme_minimal() +
+  coord_flip()
 
-ggsave(file.path(figures_folder, "Fig_E1b_R2_comparison.png"),
-       width = 14, height = 10, units = "cm", bg = "white")
+ggsave(file.path(figures_folder, "Fig_F1a_R2_comparison.png"),
+       width = 16, height = 10, units = "cm", bg = "white")
 ```
 
 ```{r}
@@ -277,20 +280,24 @@ pval_prop <- res_df |>
 ```{r}
 #| code-fold: true
 ggplot(res_df) +
-  geom_boxplot(aes(x = pval, y = perm_label)) +
-  geom_jitter(aes(x = pval, y = perm_label), 
-              width = 0, height = 0.25) +
-  geom_vline(xintercept = 0.05, linetype = "dashed") +
+  # geom_boxplot(aes(y = pval, x = perm_label)) +
+  # geom_jitter(aes(y = pval, x = perm_label),
+  #             width = 0, height = 0.25) +
+  ggdist::stat_slab(aes(y = pval, x = perm_label),
+                    width = 0.5) +
+  gghalves::geom_half_boxplot(aes(y = pval, x = perm_label),
+                              alpha = 0.5) +
+  geom_hline(yintercept = 0.05, linetype = "dashed") +
   geom_label(data = pval_prop,
-            aes(x = 0.05, y = perm_label,
+            aes(y = 0.07, x = perm_label,
                 label = prop_signif_label),
-                hjust = 0, nudge_x = 0.02) +
-  scale_y_discrete(limits = rev) +
-  xlim(0, 1) +
-  xlab("p-value") +
-  ylab("Link type") +
+                hjust = 0, nudge_x = 0.05) +
+  scale_x_discrete(limits = rev) +
+  ylim(0, 1) +
+  ylab("p-value") +
+  xlab("Link type") +
   theme_minimal() +
-  theme()
+  coord_flip()
 
 ggsave(file.path(figures_folder, "Fig_F1b_pval_distri.png"),
        width = 14, height = 10, units = "cm", 
