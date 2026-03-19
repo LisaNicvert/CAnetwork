@@ -14,7 +14,7 @@ author:
     orcid: 0000-0003-0153-1105
 embed-resources: true
 params:
-  nrep: 10
+  nrep: 500
 bibliography: references.bib
 ---
 
@@ -100,8 +100,8 @@ sdlog <- log(1.5)
 
 
 ```{r}
-#| eval: false
-
+#| eval: true
+start <- Sys.time()
 res_df <- data.frame()
 for (rep in 1:params$nrep) {
   # Simulate data ---
@@ -183,6 +183,8 @@ for (rep in 1:params$nrep) {
                            R2_corr = R2_corr)
   res_df <- rbind(res_df, res_df_rep)
 }
+end <- Sys.time()
+print(end-start)
 
 # Save results
 if (!dir.exists(output_folder)) {
