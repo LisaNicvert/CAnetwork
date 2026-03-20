@@ -14,7 +14,7 @@ author:
     orcid: 0000-0003-0153-1105
 embed-resources: true
 params:
-  nrep: 500
+  nrep: 10
 bibliography: references.bib
 ---
 
@@ -83,11 +83,11 @@ To answer this problem, we rely on a permutation approach for testing and for co
 
 ```{r}
 # Simulation parameters
-nresource <- 50
-nconsumer <- 60
+nresource <- 20
+nconsumer <- 30
 sd_tol <- 0.1
 mean_tol <- 5
-ninter <- 5000
+ninter <- 500
 delta <- 1
 
 le.grad <- 100
@@ -100,7 +100,7 @@ sdlog <- log(1.5)
 
 
 ```{r}
-#| eval: false
+#| eval: true
 start <- Sys.time()
 res_df <- data.frame()
 for (rep in 1:params$nrep) {
