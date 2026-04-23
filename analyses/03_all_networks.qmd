@@ -33,6 +33,8 @@ library(patchwork)
 library(ade4)
 library(adegraphics)
 
+library(effectsize)
+
 devtools::load_all()
 
 set.seed(42)
@@ -43,6 +45,8 @@ set.seed(42)
 nrepet <- 999
 
 # Paths
+out_folder <- here("outputs", "03_all_networks")
+
 figures_folder <- here("figures")
 input_folder <- file.path(here("outputs/01_clean_data"))
 ```
@@ -65,10 +69,6 @@ for (dir in dirs) {
                               "plant_traits.csv"))
   bt <- read.csv(file.path(input_folder, dir, 
                               "bird_traits.csv"))
-  
-  # Remove unused traits
-  # pt <- pt[, -which(colnames(pt) == "meanL")]
-  # bt <- bt[, -which(colnames(bt) == "BillLength")]
   
   # Store variables
   inter_list[[dir]] <- inter
@@ -112,6 +112,14 @@ for (i in 1:length(inter_list)) {
   pt_filtered <- pt_filtered[p, ]
   bt_filtered <- bt_filtered[b, ]
   intermat <- intermat[p, b]
+  
+  # Remove empty rows/columns
+  keep_rows <- which(rowSums(intermat) != 0)
+  keep_cols <- which(colSums(intermat) != 0)
+  
+  intermat <- intermat[keep_rows, keep_cols]
+  pt_filtered <- pt_filtered[keep_rows, ]
+  bt_filtered <- bt_filtered[keep_cols, ]
   
   # Store species code/names correspondences (not used)
   dataname <- names(inter_list)[i]
@@ -204,6 +212,7 @@ paste(nrow(neg), "datasets have negative R2 values:",
 # Filter out negative R2
 # Rcor_df <- Rcor_df |> dplyr::filter(!(dataset %in% neg$dataset))
 ```
+
 
 ```{r}
 # Prepare df
@@ -352,3 +361,61 @@ ggplot(res, aes(x = dim, y = R2_corr)) +
   theme_bw()
 ```
 
+## Non-random variation (Appendix S1: Section S7)
+
+```{r}
+# Get p-values from chi-square test
+chisq <- lapply(inter_list, 
+                function(inter) {
+                  chisq.test(inter, simulate.p.value = TRUE)
+                })
+pval <- sapply(chisq, function(c) c$p.value)
+pval_adj <- p.adjust(pval, method = "holm")
+pval_adj <- signif(pval_adj, 3)
+
+# Get Cramer effect sizes
+V_effect <- lapply(inter_list, 
+                   function(inter) {
+                     signif(effectsize::cramers_v(inter), 3)
+                     })
+
+V <- sapply(V_effect, 
+            function(Vi) Vi$Cramers_v_adjusted)
+
+V_CI <- sapply(V_effect, 
+               function(Vi) {
+                 paste0("[", 
+                        signif(Vi$CI_low, 3), "-", 
+                        signif(Vi$CI_high, 3), "]")
+                 })
+
+# Get effect size interpretation
+effect_scale <- c("small" = 0.1, "medium" = 0.3, "large" = 0.5)
+small_index <- which(V < effect_scale["small"])
+medium_index <- which(V >= effect_scale["medium"] & 
+                        V < effect_scale["large"])
+large_index <- which(V >= effect_scale["large"])
+effect_size <- rep(NA, length(V))
+effect_size[small_index] <- "small"
+effect_size[medium_index] <- "medium"
+effect_size[large_index] <- "large"
+
+# Create and display table
+df_non_random <- data.frame(dataset = names(inter_list),
+                            p_value = pval_adj,
+                            V = V,
+                            V_CI = V_CI,
+                            effect_size = effect_size)
+DT::datatable(df_non_random)
+```
+
+
+```{r}
+# Export table for LateX
+df_non_random$dataset <- gsub("_", "\\\\_", df_non_random$dataset)
+write.table(df_non_random, sep = " & ", 
+            eol = " \\\\\n\\hline\n",
+            quote = FALSE, 
+            col.names = FALSE, row.names = FALSE, 
+            file = file.path(out_folder, "non-random.txt"))
+```

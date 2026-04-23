@@ -253,7 +253,7 @@ ggplot(res_R2) +
   theme_minimal() +
   coord_flip()
 
-ggsave(file.path(figures_folder, "Fig_F1a_R2_comparison.png"),
+ggsave(file.path(figures_folder, "Fig_S1_S5a_R2_comparison.png"),
        width = 16, height = 10, units = "cm", bg = "white")
 ```
 
@@ -303,7 +303,7 @@ ggplot(res_df) +
   theme_minimal() +
   coord_flip()
 
-ggsave(file.path(figures_folder, "Fig_F1b_pval_distri.png"),
+ggsave(file.path(figures_folder, "Fig_S1_S5b_pval_distri.png"),
        width = 14, height = 10, units = "cm", 
        bg = "white")
 ```

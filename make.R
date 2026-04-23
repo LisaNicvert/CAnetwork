@@ -33,9 +33,9 @@ quarto::quarto_render(file.path(analyses_folder, "03_all_networks.qmd"),
                                             colco = colco, 
                                             colli = colli))
 
-# Evaluate R2 correction (Appendix F)
+# Evaluate R2 correction (Appendix S1 Section S6)
 # This takes a long time to run (~17 hours)
 # Change nrep to a smaller number to make tests
-# nrep <- 300
-# quarto::quarto_render(file.path(analyses_folder, "04_corrected_R2.qmd"),
-#                       execute_params = list(nrep = nrep))
+nrep <- 300
+quarto::quarto_render(file.path(analyses_folder, "04_corrected_R2.qmd"),
+                      execute_params = list(nrep = nrep))
