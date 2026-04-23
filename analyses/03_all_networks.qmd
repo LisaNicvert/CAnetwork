@@ -67,8 +67,8 @@ for (dir in dirs) {
                               "bird_traits.csv"))
   
   # Remove unused traits
-  pt <- pt[, -which(colnames(pt) == "meanL")]
-  bt <- bt[, -which(colnames(bt) == "BillLength")]
+  # pt <- pt[, -which(colnames(pt) == "meanL")]
+  # bt <- bt[, -which(colnames(bt) == "BillLength")]
   
   # Store variables
   inter_list[[dir]] <- inter
@@ -344,8 +344,9 @@ matching_cor <- Rcor_df |> dplyr::filter(type == "residual")
 res <- matching_cor |> 
   dplyr::left_join(dims_df, by = "dataset")
 
-ggplot(res) +
-  geom_point(aes(x = dim, y = R2_corr)) +
+ggplot(res, aes(x = dim, y = R2_corr)) +
+  geom_smooth() +
+  geom_point() +
   ylab("Residual correlation") +
   xlab("Product of dimensions") +
   theme_bw()

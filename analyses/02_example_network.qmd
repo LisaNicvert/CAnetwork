@@ -63,11 +63,11 @@ We remove some redundant traits (`BillLength` and `meanL`).
 
 ```{r}
 # Remove "useless" traits
-bird_traits <- bird_traits |>
-  dplyr::select(-BillLength)
-
-plant_traits <- plant_traits |>
-  dplyr::select(-meanL)
+# bird_traits <- bird_traits |>
+#   dplyr::select(-BillLength)
+# 
+# plant_traits <- plant_traits |>
+#   dplyr::select(-meanL)
 ```
 
 Then, we remove the species that have `NA` traits.
@@ -119,10 +119,10 @@ interactions <- interactions[p, b]
 
 ```{r}
 # Rename columns
-plant_traits_labels <- c("fruit diameter", "plant height", "crop mass")
+plant_traits_labels <- c("fruit length", "fruit diameter", "plant height", "crop mass")
 names(plant_traits_labels) <- colnames(plant_traits)
 
-bird_traits_labels <- c("Kipp's index", "bill width", "body mass")
+bird_traits_labels <- c("Kipp's index", "bill length", "bill width", "body mass")
 names(bird_traits_labels) <- colnames(bird_traits)
 ```
 
@@ -187,7 +187,7 @@ Correlations are decent (0.3-0.5), but the part of explained variation for each 
 
 # We invert second axis for easier interpretation (top = larger trait values)
 cor <- cca_plants$cor
-cor$RS2 <- -cor$RS2
+# cor$RS2 <- -cor$RS2
 plot_corcircle(cor = cor, 
                col = params$colli,
                label = plant_traits_labels,
@@ -207,10 +207,10 @@ Let's plot birds WA scores ($V^\star$) (`co`) at the mean of plants LC (linear c
 # Plot bird niches
 # Second axis is inverted
 l1 <- cca_plants$l1
-l1[, 2] <- - l1[, 2]
+# l1[, 2] <- - l1[, 2]
 
 co <- cca_plants$co
-co[, 2] <- - co[, 2]
+# co[, 2] <- - co[, 2]
 
 
 multiplot(indiv_row = l1,
@@ -218,7 +218,7 @@ multiplot(indiv_row = l1,
           eig = cca_plants$eig, 
           row_color = params$colli, 
           col_color = params$colco, 
-          # xlim = c(-6, 6),
+          xlim = c(-6, 6),
           max.overlaps = 15)
 ggsave(file.path(figures_folder, "Fig_C1b_cca_plants_bniches.png"),
        width = 13, height = 13, units = "cm")
@@ -256,7 +256,7 @@ plot_eig(cca_birds$eig/sum(ca$eig)) +
 #| code-fold: true
 
 cor <- cca_birds$cor
-cor[, 2]  <- -cor[, 2]
+cor[, 1]  <- -cor[, 1]
 plot_corcircle(cor = cor, 
                col = params$colco,
                label = bird_traits_labels,
@@ -273,12 +273,12 @@ We plot plants WA scores ($V^\star$) (`co`) at the mean of birds LC scores $Z$ (
 ```{r}
 #| code-fold: true
 
-# Invert second axis
+# Invert first axis
 l1 <- cca_birds$l1
-l1[, 2] <- - l1[, 2]
+l1[, 1] <- - l1[, 1]
 
 co <- cca_birds$co
-co[, 2] <- - co[, 2]
+co[, 1] <- - co[, 1]
 
 # Plants niches
 multiplot(indiv_row = l1,
@@ -320,10 +320,10 @@ plot_eig(dcca$eig/sum(ca$eig)) +
 #| code-fold: true
 
 corR <- dcca$corR
-corR[, 2] <- -corR[, 2] 
+# corR[, 2] <- -corR[, 2] 
 
 corQ <- dcca$corQ
-corQ[, 2] <- -corQ[, 2] 
+# corQ[, 2] <- -corQ[, 2] 
 plot_corcircle(cor = corR, 
                col = params$colli,
                label = plant_traits_labels,
@@ -348,24 +348,24 @@ We plot the biplots with a scaling appropriate to represent species niches:
 #| code-fold: true
 
 lsR <- dcca$lsR
-lsR[, 2] <- - lsR[, 2]
+# lsR[, 2] <- - lsR[, 2]
 
 c1 <- dcca$c1
-c1[, 2] <- - c1[, 2]
+# c1[, 2] <- - c1[, 2]
 
 l1 <- dcca$l1
-l1[, 2] <- - l1[, 2]
+# l1[, 2] <- - l1[, 2]
 
 lsQ <- dcca$lsQ
-lsQ[, 2] <- - lsQ[, 2]
+# lsQ[, 2] <- - lsQ[, 2]
 
 # Thr 1
 # xlim <- c(-4, 7)
 # ylim <- c(-4, 7)
 
 # Thr 2
-xlim <- c(-4, 8)
-ylim <- c(-3, 11)
+xlim <- c(-4, 9)
+ylim <- c(-11, 4)
 grad <- 4
 
 # Plant niches
@@ -522,7 +522,7 @@ Plot histograms of trait values.
 #| code-fold: true
 
 plant_traits_labels_units <- paste(plant_traits_labels, 
-                                   c("(mm)", "(m)", "(g)"))
+                                   c("(mm)", "(mm)", "(m)", "(g)"))
 names(plant_traits_labels_units) <- names(plant_traits)
 
 glist <- list()
@@ -545,17 +545,17 @@ for (colname in colnames(plant_traits)) {
 }
 
 wrap_plots(glist) +  
-  plot_layout(axis_titles = "collect_y")
+  plot_layout(axis_titles = "collect_y", nrow = 1)
 
 ggsave(file.path(figures_folder, "Fig_B1a_plant_traits.png"),
-       width = 20, height = 7, units = "cm")
+       width = 26, height = 7, units = "cm")
 ```
 
 ```{r, fig.width=8, fig.height=3}
 #| code-fold: true
 
 bird_traits_labels_units <- paste(bird_traits_labels, 
-                                   c("", "(mm)", "(g)"))
+                                   c("", "(mm)", "(mm)", "(g)"))
 names(bird_traits_labels_units) <- names(bird_traits_labels)
 
 glist <- list()
@@ -579,10 +579,10 @@ for (colname in colnames(bird_traits)) {
 }
 
 wrap_plots(glist) +  
-  plot_layout(axis_titles = "collect_y")
+  plot_layout(axis_titles = "collect_y", nrow = 1)
 
 ggsave(file.path(figures_folder, "Fig_B1b_bird_traits.png"),
-       width = 20, height = 7, units = "cm")
+       width = 26, height = 7, units = "cm")
 ```
 
 ## Residuals (Appendix E)
@@ -600,10 +600,10 @@ Let's plot plant coordinates:
 #| code-fold: true
 
 ls <- cca_plants$ls
-ls[, 2] <- - ls[, 2]
+# ls[, 2] <- - ls[, 2]
 
 li <- cca_plants$li
-li[, 2] <- - li[, 2]
+# li[, 2] <- - li[, 2]
 
 # ls -> li
 s.match(ls, li, xax = 1, yax = 2, 

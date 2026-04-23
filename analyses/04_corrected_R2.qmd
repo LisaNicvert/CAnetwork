@@ -100,7 +100,7 @@ sdlog <- log(1.5)
 
 
 ```{r}
-#| eval: true
+#| eval: false
 start <- Sys.time()
 res_df <- data.frame()
 for (rep in 1:params$nrep) {
@@ -246,7 +246,7 @@ ggplot(res_R2) +
                  hjust = 0,
              show.legend = FALSE) +
   scale_x_discrete(limits = rev) +
-  scale_y_continuous(limits = c(-0.05, 0.2)) +
+  scale_y_continuous(limits = c(-0.07, 0.4)) +
   xlab("Link type") +
   ylab(expression(R^2)) +
   labs(fill = expression(R^2~"type")) +
@@ -280,10 +280,14 @@ pval_prop <- res_df |>
 ```{r}
 #| code-fold: true
 ggplot(res_df) +
-  # geom_boxplot(aes(y = pval, x = perm_label)) +
-  # geom_jitter(aes(y = pval, x = perm_label),
-  #             width = 0, height = 0.25) +
-  ggdist::stat_slab(aes(y = pval, x = perm_label),
+  geom_jitter(data = res_df |> 
+                      filter(perm_label == "rows + columns"),
+              aes(y = pval, x = perm_label),
+              width = 0.3, height = 0,
+              size = 0.8, alpha = 0.5) +
+  ggdist::stat_slab(data = res_df |> 
+                      filter(perm_label != "rows + columns"),
+                    aes(y = pval, x = perm_label),
                     width = 0.5) +
   gghalves::geom_half_boxplot(aes(y = pval, x = perm_label),
                               alpha = 0.5) +
