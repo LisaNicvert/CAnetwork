@@ -67,3 +67,5 @@ For data licences, see the documentation of each dataset.
 ## References
 
 Dehling, D. M., Bender, I. M. A., Blendinger, P. G., Muñoz, M. C., Quitián, M., Saavedra, F., Santillán, V., Böhning-Gaese, K., Neuschulz, E.-L., & Schleuning, M. (2021). ANDEAN frugivory: Data on plant-bird interactions and functional traits of plant and bird species from montane forests along the Andes (Version 2, p. 187397 bytes) [dataset]. Dryad. https://doi.org/10.5061/DRYAD.WM37PVMN5
+
+Nicvert, L., Fritz, H., & Dray, S. (2026). Analyzing trait matching and interaction niches in ecological networks using constrained correspondence analyses.
