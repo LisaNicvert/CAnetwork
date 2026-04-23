@@ -346,7 +346,7 @@
     "ade4": {
       "Package": "ade4",
       "Version": "1.7-24",
-      "Source": "GitHub",
+      "Source": "Repository",
       "Title": "Analysis of Ecological Data: Exploratory and Euclidean Methods in Environmental Sciences",
       "Authors@R": "c( person(\"Stéphane\", \"Dray\", email = \"stephane.dray@univ-lyon1.fr\", role = \"aut\", comment = c(ORCID = \"0000-0003-0153-1105\")), person(\"Anne-Béatrice\", \"Dufour\", email = \"anne-beatrice.dufour@univ-lyon1.fr\", role = \"aut\", comment = c(ORCID = \"0000-0002-9339-4293\")), person(\"Jean\", \"Thioulouse\", email = \"jean.thioulouse@univ-lyon1.fr\", role = \"aut\", comment = c(ORCID = \"0000-0001-7664-0598\")), person(\"Daniel\", \"Chessel\", role = \"ant\"), person(\"Thibaut\", \"Jombart\", role = \"ctb\"), person(\"Sandrine\", \"Pavoine\",role = \"ctb\"), person(\"Jean R.\", \"Lobry\", role = \"ctb\"), person(\"Sébastien\", \"Ollier\", role = \"ctb\"), person(\"Daniel\", \"Borcard\", role = \"ctb\"), person(\"Pierre\", \"Legendre\", role = \"ctb\"), person(\"Stéphanie\", \"Bougeard\", role = \"ctb\"), person(\"Aurélie\", \"Siberchicot\", role = c(\"ctb\", \"cre\"), email = \"aurelie.siberchicot@univ-lyon1.fr\", comment = c(ORCID = \"0000-0002-7638-8318\")) )",
       "Depends": [
@@ -393,15 +393,10 @@
       "URL": "https://adeverse.github.io/ade4/, http://pbil.univ-lyon1.fr/ADE-4/",
       "BugReports": "https://github.com/adeverse/ade4/issues",
       "Encoding": "UTF-8",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "ade4",
-      "RemoteUsername": "adeverse",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "4bfb05bea6c915c53b93f60d55f9cc6348f7470b",
       "NeedsCompilation": "yes",
       "Author": "Stéphane Dray [aut] (ORCID: <https://orcid.org/0000-0003-0153-1105>), Anne-Béatrice Dufour [aut] (ORCID: <https://orcid.org/0000-0002-9339-4293>), Jean Thioulouse [aut] (ORCID: <https://orcid.org/0000-0001-7664-0598>), Daniel Chessel [ant], Thibaut Jombart [ctb], Sandrine Pavoine [ctb], Jean R. Lobry [ctb], Sébastien Ollier [ctb], Daniel Borcard [ctb], Pierre Legendre [ctb], Stéphanie Bougeard [ctb], Aurélie Siberchicot [ctb, cre] (ORCID: <https://orcid.org/0000-0002-7638-8318>)",
-      "Maintainer": "Aurélie Siberchicot <aurelie.siberchicot@univ-lyon1.fr>"
+      "Maintainer": "Aurélie Siberchicot <aurelie.siberchicot@univ-lyon1.fr>",
+      "Repository": "CRAN"
     },
     "adegraphics": {
       "Package": "adegraphics",
