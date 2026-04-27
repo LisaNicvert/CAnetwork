@@ -59,11 +59,8 @@ Run the script `make.R` to reproduce all analyses (warning: script `analyses/05_
 
 ## Licence
 
-The code used to perform analyses and produce figures of this project is licensed under the Creative Commons Attribution 4.0 International License.
-
-The underlying source code used generate content (contained in the R/ folder and associated to the package) is licensed under the GPL >= 2 licence.
-
-For data licences, see the documentation of each dataset.
+The original code is licensed under the GPL >= 2 licence. 
+The ANDEAN frugivory dataset (Dehling et al., 2021) is licensed as [CC-0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) as indicated in the [original repository](https://doi.org/10.5061/dryad.wm37pvmn5).
 
 ## References
 
