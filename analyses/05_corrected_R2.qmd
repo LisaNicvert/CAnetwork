@@ -39,7 +39,7 @@ devtools::load_all()
 set.seed(42)
 
 figures_folder <- here("figures")
-output_folder <- here("outputs", "04_corrected_R2")
+output_folder <- here("outputs", "05_corrected_R2")
 ```
 
 ## Introduction

@@ -33,11 +33,13 @@ library(patchwork)
 library(ade4)
 library(adegraphics)
 
+library(effectsize)
+
 devtools::load_all()
 
 # Paths
 figures_folder <- here("figures")
-out_folder <- here("outputs", "02_example_network", params$dataset)
+out_folder <- here("outputs", "03_example_network", params$dataset)
 input_folder <- here("outputs", "01_clean_data", params$dataset)
 
 set.seed(42)

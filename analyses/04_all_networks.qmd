@@ -45,7 +45,7 @@ set.seed(42)
 nrepet <- 999
 
 # Paths
-out_folder <- here("outputs", "03_all_networks")
+out_folder <- here("outputs", "04_all_networks")
 
 figures_folder <- here("figures")
 input_folder <- file.path(here("outputs/01_clean_data"))
