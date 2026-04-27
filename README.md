@@ -10,6 +10,7 @@ The dataset contained in the `data/` folder comes from the ANDEAN frugivory data
 ## Contents
 
 -   `analyses/` contains all scripts to reproduce the analyses.
+    - `01_Fig_1_summary.R` plots the Figure 1 from the manuscript
     - `02_clean_data.R` formats original data from Dehling et al. (2021) for the analysis
     - `03_example_network.qmd` (compiled file: `03_example_network.html`) performs the detailed analysis on network Peru1
     - `04_all_networks.qmd` (compiled file: `04_all_networks.html`) performs variation partitioning on all networks
