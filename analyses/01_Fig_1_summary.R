@@ -1,169 +1,18 @@
 # Libraries ---------------------------------------------------------------
 library(ggplot2)
-library(dplyr)
-library(rphylopic)
-library(tidyr)
-library(ade4)
 library(patchwork)
+library(rphylopic)
+
+library(dplyr)
+library(tidyr)
+
+library(ade4)
+
 library(here)
 
+devtools::load_all()
+
 figures_path <- here("figures", "Fig_1_summary")
-
-# Custom functions --------------------------------------------------------
-plot_table <- function(x = as.numeric(as.factor(abundance_data$Consumer_sp)), y = as.numeric(as.factor(abundance_data$Resource_sp)), WA = FALSE){
-  p_data <- ggplot(abundance_data, aes(x = x, y = y , size = Abundance))
-  # xlim(0.5, n_consumer + 0.5) + ylim(0.5, n_resource + 0.5)
-  
-  plot_wa_consumer <- function(p_data, xbase, score, weights, img = img_consumer){
-    y0 <-  seq( 0.5,  6.5, length = 100)
-    x0 <-  xbase - 4 * dnorm(y0, mean = weighted.mean(score, w = weights), sd = sqrt(varfacwt(score, wt = weights)))
-    df <- cbind(yn = c(y0, y0[length(y0)]), xn = c(x0, x0[1])) 
-    df_mean <- data.frame(x1 = min(df[,2]),  x2 = max(df[,2]), y1 = weighted.mean(score, w = weights), y2 = weighted.mean(score, w = weights))
-    p_data + geom_polygon(data = df, aes(x = xn, y = yn), inherit.aes = FALSE, fill = "burlywood", alpha = 0.2) +
-      geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2), arrow = arrow(type = "closed", length = unit(0.2, "cm")), data = df_mean, inherit.aes = FALSE, lwd = 1, col = "burlywood", ) +
-      geom_phylopic(img = img, aes(x = df_mean$x1[1] - 0.3, y = weighted.mean(score, w = weights)), width = 0.4, height = NA, fill =  "burlywood") +
-      annotate("label", x = df_mean$x1[1]-0.9, y = weighted.mean(score, w = weights), label = perm_consumer[xbase], col = "black", fill = "beige", size = 5,  alpha = 0.7)
-  }
-  
-  p_data <- p_data + geom_point() + 
-    xlim(0.5, n_consumer + 0.5)  +
-    ylim(0.5, n_resource + 0.5)  +
-    scale_size(range= c(1,12)) + 
-    theme_void() + 
-    theme(legend.position = "none", 
-          panel.border = element_rect(colour = "black", fill= NA, linewidth = 3))# A clean theme
-  
-  if(WA){
-    highlight_points <- subset(abundance_data, Consumer_sp == "Consumer_H")
-    p_data <- plot_wa_consumer(p_data, 8, 1:6, abund_table[,8])
-    p_data <- p_data + geom_point(data = highlight_points, aes(x =  coa_c, y = coa_r, size = Abundance), 
-                                  shape = 21, 
-                                  color = "burlywood", 
-                                  fill = "black",
-                                  stroke = 2)
-  }
-  
-  p_data
-  
-}
-
-plot_consumer <- function(x = 1:n_consumer, img = img_consumer){
-  p_consumer <- ggplot() +
-    geom_phylopic(img = img,
-                  aes(x = rank(x), y = 0, width =  traits_consumer$size / max(traits_consumer$size)), fill =  col_consumer) + 
-    
-    geom_label(aes(x = rank(x), y = -0.3, label = perm_consumer), col = "black", fill = "beige", size = 5, alpha = 0.7, 
-               label.size = NA) +
-    scale_width_continuous(range = c(0.4, 1)) + labs(tag = expression(bold(v[1]))) +
-    xlim(0.5, n_consumer + 0.5)  + 
-    ylim(-0.5, 0.4)+
-    theme_void() + 
-    theme(plot.tag.position = c(1.05, 0.5), plot.tag = element_text(size = 20), legend.position = "none", panel.border = element_rect(colour = "black", fill= NA, linewidth = 3))
-  
-  p_consumer
-}
-
-plot_resource <- function(y = 1:n_resource, img = img_resource){
-  p_resource <- ggplot() + 
-    geom_phylopic(img = img,
-                  aes(x =0, y = rank(y), height = traits_resource$size / max(traits_resource$size)), fill =  col_resource) + 
-    geom_label(aes(y = rank(y), x = -0.3, label = perm_resource), col = "black", fill = "beige", size = 5, alpha = 0.7, 
-               label.size = NA) +
-    scale_height_continuous(range = c(0.4, 0.9)) +
-    ylim(0.5, n_resource + 0.5) + labs(tag = expression(bold(u[1]))) +
-    xlim(-0.5, 0.4)+
-    theme_void() + 
-    theme(plot.tag.position = c(0.5, 1.05), plot.tag = element_text(size = 20), legend.position = "none", panel.border = element_rect(colour = "black", fill= NA, linewidth = 3)) 
-  
-  p_resource
-  
-}
-
-plot_consumer_data <- function(x = 1:n_consumer, img = img_consumer){
-  p_consumer <- ggplot() +
-    geom_phylopic(img = img,
-                  aes(x = rep(rank(x), 2), y = rep(c(0,1), c(n_consumer, n_consumer)), width =  c(rep(0.5, n_consumer), traits_consumer$size / max(traits_consumer$size))), fill =  c(col_consumer, rep("#000000", n_consumer))) + 
-    
-    geom_label(aes(x = rank(x), y = 0.5, label = perm_consumer), col = "black", fill = "beige", size = 5, alpha = 0.7, 
-               label.size = NA) +
-    scale_width_continuous(range = c(0.4, 1)) +labs(tag = expression(bold(Q))) +
-    xlim(0.5, n_consumer + 0.5)  + 
-    ylim(-0.5, 1.5)  +
-    theme_void() + 
-    theme(plot.tag.position = c(1.05, 0.5), plot.tag = element_text(size = 20), legend.position = "none", panel.border = element_rect(colour = "black", fill= NA, linewidth = 3))
-  
-  p_consumer
-}
-
-plot_resource_data <- function(y = 1:n_resource, img = img_resource){
-  p_resource <- ggplot() + 
-    geom_phylopic(img = img,
-                  aes(x =rep(c(0,1), c(n_resource, n_resource)), y = rep(rank(y), 2), height = c(rep(0.5, n_resource), traits_resource$size / max(traits_resource$size))), fill =  c(col_resource, rep("#000000", n_resource))) + 
-    geom_label(aes(y = rank(y), x = 0.5, label = perm_resource), col = "black", size = 5,  alpha = 0.7, 
-               label.size = NA, fill = "beige") +
-    scale_height_continuous(range = c(0.4, 0.9)) + labs(tag = expression(bold(R))) +
-    ylim(0.5, n_resource + 0.5) + 
-    xlim(-0.5, 1.5)  +
-    theme_void() + 
-    theme(plot.tag.position = c(0.5, 1.05), plot.tag = element_text(size = 20), legend.position = "none", panel.border = element_rect(colour = "black", fill= NA, linewidth = 3)) 
-  
-  p_resource
-  
-}
-
-
-plot_consumer_grey <- function(x = 1:n_consumer, img = img_consumer){
-  p_consumer <- ggplot() +
-    geom_phylopic(img = img,
-                  aes(x = rank(x), y = 0), width = 0.9, fill =  "grey") +
-    geom_label(aes(x = rank(x), y = -0.3, label = perm_consumer), col = "black", fill = "beige", size = 5, alpha = 0.7, 
-               label.size = NA) +
-    
-    scale_width_continuous(range = c(0.4, 1)) + labs(tag = expression(bold(v[1]))) +
-    xlim(0.5, n_consumer + 0.5)  + 
-    ylim(-0.5, 0.4)+
-    theme_void() + 
-    theme(plot.tag.position = c(1.05, 0.5), plot.tag = element_text(size = 20), legend.position = "none", panel.border = element_rect(colour = "black", fill= NA, linewidth = 3))
-  
-  p_consumer
-}
-
-plot_resource_grey <- function(y = 1:n_resource, img = img_resource){
-  p_resource <- ggplot() + 
-    geom_phylopic(img = img,
-                  aes(x =0, y = rank(y)), height = 0.9, fill = "grey") +
-    geom_label(aes(x = -0.3, y = rank(y), label = perm_resource), col = "black", fill = "beige", size = 5, alpha = 0.7, 
-               label.size = NA)+ 
-    scale_height_continuous(range = c(0.4, 0.9)) +
-    ylim(0.5, n_resource + 0.5) + labs(tag = expression(bold(u[1]))) +
-    xlim(-0.5, 0.4)+
-    theme_void() + 
-    theme(plot.tag.position = c(0.5, 1.05), plot.tag = element_text(size = 20), legend.position = "none", panel.border = element_rect(colour = "black", fill= NA, linewidth = 3)) 
-  
-  p_resource
-  
-}
-
-patch_plot <- function(p_data, p_resource, p_consumer){
-  patch_1 <-   (p_consumer | plot_spacer() |plot_spacer()) + plot_layout(widths = c(n_consumer, 0.2, 1))
-  patch_1 <- patch_1
-  patch_2 <- (p_data | plot_spacer() | p_resource) + plot_layout(widths = c(n_consumer, 0.2,  1))
-  patch <- patch_1 / plot_spacer() / patch_2
-  patch <- patch  + plot_layout(heights = c(1, 0.2, n_resource))  
-  patch
-  
-}
-
-
-patch_plot_data <- function(p_data, p_resource, p_consumer){
-  patch_1 <-   (p_consumer | plot_spacer() |plot_spacer()) + plot_layout(widths = c(n_consumer, 0.2, 2))
-  patch_2 <- (p_data | plot_spacer() | p_resource) + plot_layout(widths = c(n_consumer, 0.2,  2))
-  patch <- patch_1 / plot_spacer() / patch_2
-  patch <- patch  + plot_layout(heights = c(2, 0.2, n_resource))  
-  patch
-  
-}
-
 
 # Create example data -----------------------------------------------------
 n_consumer <- 8
@@ -246,23 +95,41 @@ abundance_data <- abundance_data_raw %>%
 # Plot --------------------------------------------------------------------
 
 ## Plot the original data
-g1 <- plot_table() 
-g2 <- plot_resource_data()
-g3 <- plot_consumer_data()
-patch_plot_data(g1, g2, g3)
+g1 <- plot_table(x = as.numeric(as.factor(abundance_data$Consumer_sp)), 
+                 y = as.numeric(as.factor(abundance_data$Resource_sp)),
+                 abundance_data = abundance_data, abund_table = abund_table)
+g2 <- plot_traits_data(traits = traits_resource, label = perm_resource,
+                       img = img_resource, fill = col_resource,
+                       type = "resource", reorder = TRUE)
+g3 <- plot_traits_data(traits = traits_consumer, label = perm_consumer,
+                       img = img_consumer, fill = col_consumer,
+                       type = "consumer", reorder = TRUE)
+patch_plot(g1, g2, g3, 
+           n_consumer = n_consumer, n_resource = n_resource,
+           traits_dim = 2)
 ggsave(file.path(figures_path, "plot_data0.pdf"), 
        width = 140, height = 140, unit = "mm")
 
 ## Plot the permuted original data
-g1 <- plot_table(x = abundance_data$perm_c, y = abundance_data$perm_r) 
-g2 <- plot_resource_data(y = perm_resource)
-g3 <- plot_consumer_data(x = perm_consumer)
-g_data <- patch_plot_data(g1, g2, g3) + plot_annotation(
+g1 <- plot_table(x = abundance_data$perm_c, 
+                 y = abundance_data$perm_r,
+                 abundance_data = abundance_data, abund_table = abund_table)
+g2 <- plot_traits_data(traits = traits_resource, label = perm_resource,
+                       img = img_resource, fill = col_resource,
+                       type = "resource")
+g3 <- plot_traits_data(traits = traits_consumer, label = perm_consumer,
+                       img = img_consumer, fill = col_consumer,
+                       type = "consumer")
+
+g_data <- patch_plot(g1, g2, g3, 
+                     n_consumer = n_consumer, n_resource = n_resource,
+                     traits_dim = 2) + 
+  plot_annotation(
     caption = bquote("Original data tables (" * bold(R) * ", " * bold(L) * " and " * bold(Q) * ")"),
     theme = theme(
         plot.caption = element_text(hjust = 0.5, vjust = 1, size = 20)
+        )
     )
-)
 
 g_data    
 ggsave(file.path(figures_path, "plot_data.pdf"), 
@@ -270,10 +137,20 @@ ggsave(file.path(figures_path, "plot_data.pdf"),
 
 
 ## Plot COA results
-g1 <- plot_table(x = abundance_data$coa_c, y = abundance_data$coa_r, WA = TRUE) 
-g2 <- plot_resource_grey(y = unique(abundance_data$coa_r))
-g3 <- plot_consumer_grey(x = unique(abundance_data$coa_c))
-g_coa <- patch_plot(g1, g2, g3) +  
+g1 <- plot_table(x = abundance_data$coa_c, 
+                 y = abundance_data$coa_r,
+                 abundance_data = abundance_data, abund_table = abund_table,
+                 label_consumer = perm_consumer,
+                 img_consumer = img_consumer,
+                 WA = TRUE)
+g2 <- plot_traits(traits = traits_resource, order =  unique(abundance_data$coa_r),
+                  label = perm_resource, 
+                  img = img_resource, type = "resource")
+g3 <- plot_traits(traits = traits_consumer, order =  unique(abundance_data$coa_c),
+                  label = perm_consumer, 
+                  img = img_consumer, type = "consumer")
+g_coa <- patch_plot(g1, g2, g3, 
+                    n_consumer = n_consumer, n_resource = n_resource) +  
     plot_annotation(
         caption = bquote("CA of " * bold(L) * " (" * delta[1] * " = " * .(round(coa_Y$eig[1], 2)) * ")"),
         theme = theme(
@@ -287,10 +164,19 @@ ggsave(file.path(figures_path, "plot_coa.pdf"),
 
 
 ## Plot CCA-R results
-g1 <- plot_table(x = abundance_data$ccaR_c, y = abundance_data$ccaR_r) 
-g2 <- plot_resource(y = unique(abundance_data$ccaR_r))
-g3 <- plot_consumer_grey(x = unique(abundance_data$ccaR_c))
-g_ccaR <- patch_plot(g1, g2, g3) + 
+g1 <- plot_table(x = abundance_data$ccaR_c, 
+                 y = abundance_data$ccaR_r,
+                 abundance_data = abundance_data, abund_table = abund_table) 
+g2 <- plot_traits(traits = traits_resource, 
+                  order = unique(abundance_data$ccaR_r),
+                  label = perm_resource, 
+                  img = img_resource, fill = col_resource, type = "resource")
+g3 <- plot_traits(traits = traits_consumer, 
+                  order = unique(abundance_data$ccaR_c),
+                  label = perm_consumer,
+                  img = img_consumer, type = "consumer")
+g_ccaR <- patch_plot(g1, g2, g3, 
+                     n_consumer = n_consumer, n_resource = n_resource) + 
     plot_annotation(
         caption = bquote("CCA constrained by " * bold(R) * " (" * delta[1] * " = " * .(round(cca_R$eig[1], 2)) * ")"),
         theme = theme(
@@ -303,10 +189,19 @@ ggsave(file.path(figures_path, "plot_ccaR.pdf"),
        width = 140, height = 140, unit = "mm")
 
 ## Plot CCA-Q results
-g1 <- plot_table(x = abundance_data$ccaQ_c, y = abundance_data$ccaQ_r) 
-g2 <- plot_resource_grey(y = unique(abundance_data$ccaQ_r))
-g3 <- plot_consumer(x = unique(abundance_data$ccaQ_c))
-g_ccaQ <- patch_plot(g1, g2, g3) + 
+g1 <- plot_table(x = abundance_data$ccaQ_c, 
+                 y = abundance_data$ccaQ_r,
+                 abundance_data = abundance_data, abund_table = abund_table) 
+g2 <- plot_traits(traits = traits_resource, 
+                  order = unique(abundance_data$ccaQ_r),
+                  label = perm_resource, 
+                  img = img_resource, type = "resource")
+g3 <- plot_traits(traits = traits_consumer, 
+                  order = unique(abundance_data$ccaQ_c),
+                  label = perm_consumer, fill = col_consumer,
+                  img = img_consumer, type = "consumer")
+g_ccaQ <- patch_plot(g1, g2, g3, 
+                     n_consumer = n_consumer, n_resource = n_resource) + 
     plot_annotation(
         caption = bquote("CCA constrained by " * bold(Q) * " (" * delta[1] * " = " * .(round(cca_Q$eig[1], 2)) * ")"),
         theme = theme(
@@ -319,11 +214,19 @@ ggsave(file.path(figures_path, "plot_ccaQ.pdf"),
        width = 140, height = 140, unit = "mm")
 
 ## Plot dc-CA results
-
-g1 <- plot_table(x = abundance_data$dcca_c, y = abundance_data$dcca_r) 
-g2 <- plot_resource(y = unique(abundance_data$dcca_r))
-g3 <- plot_consumer(x = unique(abundance_data$dcca_c))
-g_dcca <- patch_plot(g1, g2, g3) + 
+g1 <- plot_table(x = abundance_data$dcca_c, 
+                 y = abundance_data$dcca_r,
+                 abundance_data = abundance_data, abund_table = abund_table)
+g2 <- plot_traits(traits = traits_resource, 
+                  order = unique(abundance_data$dcca_r),
+                  label = perm_resource, fill = col_resource,
+                  img = img_resource, type = "resource")
+g3 <- plot_traits(traits = traits_consumer, 
+                  order = unique(abundance_data$dcca_c),
+                  label = perm_consumer, fill = col_consumer,
+                  img = img_consumer, type = "consumer")
+g_dcca <- patch_plot(g1, g2, g3, 
+                     n_consumer = n_consumer, n_resource = n_resource) + 
     plot_annotation(
         caption = bquote("dc-CA constrained by " * bold(R) * " and " * bold(Q) * " (" * delta[1] * " = " * .(round(dcca_RQ$eig[1], 2)) * ")"),
         theme = theme(

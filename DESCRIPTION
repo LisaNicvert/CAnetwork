@@ -17,6 +17,8 @@ Imports:
     ggrepel,
     grid,
     mvtnorm,
+    patchwork,
+    rphylopic,
     stats,
     stringr,
     tibble,
