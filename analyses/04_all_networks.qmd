@@ -373,6 +373,9 @@ pval <- sapply(chisq, function(c) c$p.value)
 pval_adj <- p.adjust(pval, method = "holm")
 pval_adj <- signif(pval_adj, 3)
 
+# Get statistic
+stat <- sapply(chisq, function(c) signif(c$statistic, 3))
+
 # Get Cramer effect sizes
 V_effect <- lapply(inter_list, 
                    function(inter) {
@@ -402,6 +405,7 @@ effect_size[large_index] <- "large"
 
 # Create and display table
 df_non_random <- data.frame(dataset = names(inter_list),
+                            chisq = stat,
                             p_value = pval_adj,
                             V = V,
                             V_CI = V_CI,
