@@ -204,7 +204,9 @@ multiplot(indiv_row = cca_plants$l1,
           row_color = params$colli, 
           col_color = params$colco, 
           xlim = c(-6, 6),
-          max.overlaps = 15)
+          max.overlaps = 15,
+          force = 3,
+          force_pull = 0.1)
 ggsave(file.path(figures_folder, "Fig_S1_S2b_cca_plants_bniches.png"),
        width = 13, height = 13, units = "cm")
 ```
@@ -279,7 +281,9 @@ multiplot(indiv_row = l1,
           col_color = params$colli, 
           # xlim = c(-2, 7),
           # ylim = c(-6, 5),
-          max.overlaps = 15) +
+          max.overlaps = 15,
+          force = 3,
+          force_pull = 0.1) +
   ggtitle("Plant niches")
 ggsave(file.path(figures_folder, "Fig_S1_S3b_cca_birds_pniches.png"),
        width = 13, height = 11, units = "cm")
@@ -304,6 +308,13 @@ plot_eig(sqrt(dcca$eig)) + ggtitle("Square-roots of eigenvalues of the dc-CA")
 plot_eig(dcca$eig/sum(ca$eig)) + 
   ggtitle("Part of explained variance for each axis of the dc-CA")
 ```
+```{r}
+# Correlation between traits
+sqrt(dcca$eig[1:2])
+
+# Variation explained by first 2 axes
+sum(dcca$eig[1:2])/sum(dcca$eig)
+```
 
 ### Correlation circle
 
@@ -319,7 +330,7 @@ plot_corcircle(cor = dcca$corR,
                lty2 = "solid",
                label2 = bird_traits_labels,
                eig = cca_plants$eig)
-ggsave(file.path(figures_folder, "Fig_3a_dcca_corcircle.png"),
+ggsave(file.path(figures_folder, "Fig_3a_dcca_corcircle_orig.svg"),
        width = 15, height = 11, units = "cm")
 ```
 
@@ -346,7 +357,9 @@ multiplot(indiv_row = dcca$lsR,
           xlim = xlim,
           ylim = ylim,
           grad = grad,
-          max.overlaps = 15)
+          max.overlaps = 15,
+          force = 3,
+          force_pull = 0.1)
 ggsave(file.path(figures_folder, "Fig_3b_dcca_pniches.png"),
        width = 11, height = 11, units = "cm")
 
@@ -359,7 +372,9 @@ multiplot(indiv_row = dcca$l1,
           xlim = xlim,
           ylim = ylim,
           grad = grad,
-          max.overlaps = 15)
+          max.overlaps = 15,
+          force = 3,
+          force_pull = 0.1)
 ggsave(file.path(figures_folder, "Fig_3c_dcca_bniches.png"),
        width = 11, height = 11, units = "cm")
 ```
