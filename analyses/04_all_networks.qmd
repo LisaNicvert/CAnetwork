@@ -306,20 +306,33 @@ Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name,
 #| output: false
 
 # Plot by source of variation
+
+# Precompute median for mabels
+median <- tapply(Rcor_df$R2_corr, Rcor_df$type_name, median)
+median_df <- data.frame(type_name = names(median),
+                        median = median)
+
 (gbox <- ggplot(Rcor_df,
                aes(y = forcats::fct_rev(type_name), 
                    x = R2_corr, color = type_name)) +
-  geom_boxplot(show.legend = FALSE) +
-  geom_jitter(width = 0, height = 0.2,
-              show.legend = FALSE) +
-  stat_summary(fun = "median",
-               geom = "label",
-               aes(label = round(after_stat(x), 3)),
-               size = 3,
+    geom_boxplot(show.legend = FALSE, 
+                 width = 0.8,
+                 outliers = FALSE) +
+    geom_jitter(width = 0, height = 0.2,
+                size = 0.8,
+                show.legend = FALSE,
+                aes(alpha = signif)) +
+    scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.2)) +
+    geom_label(data = median_df,
+               aes(x = median, 
+                   label = round(median, 3)),
+               position = position_nudge(y = 0.4),
+               # vjust = 0,
+               size = 2.5,
                show.legend = FALSE) +
-  scale_color_manual(values = coltype) +
-  ylab("Origin of variation") +
-  theme_minimal())
+    scale_color_manual(values = coltype) +
+    ylab("Origin of variation") +
+    theme_minimal())
 ```
 
 ```{r}
@@ -410,6 +423,7 @@ df_non_random <- data.frame(dataset = names(inter_list),
                             V = V,
                             V_CI = V_CI,
                             effect_size = effect_size)
+rownames(df_non_random) <- NULL
 DT::datatable(df_non_random)
 ```
 
