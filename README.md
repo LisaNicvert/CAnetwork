@@ -59,7 +59,7 @@ Run the script `make.R` to reproduce all analyses (warning: script `analyses/05_
 
 ## Licence
 
-The original code is licensed under the GPL >= 2 licence. 
+The original code is licensed under the MIT licence. 
 The ANDEAN frugivory dataset (Dehling et al., 2021) is licensed as [CC-0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) as indicated in the [original repository](https://doi.org/10.5061/dryad.wm37pvmn5).
 
 ## References
