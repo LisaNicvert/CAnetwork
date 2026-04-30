@@ -94,7 +94,7 @@ abundance_data <- abundance_data_raw %>%
 
 # Plot --------------------------------------------------------------------
 
-## Plot the original data
+## Plot the original data ------
 g1 <- plot_table(x = as.numeric(as.factor(abundance_data$Consumer_sp)), 
                  y = as.numeric(as.factor(abundance_data$Resource_sp)),
                  abundance_data = abundance_data, abund_table = abund_table)
@@ -110,7 +110,7 @@ patch_plot(g1, g2, g3,
 ggsave(file.path(figures_path, "plot_data0.pdf"), 
        width = 140, height = 140, unit = "mm")
 
-## Plot the permuted original data
+## Plot the permuted original data ------
 g1 <- plot_table(x = abundance_data$perm_c, 
                  y = abundance_data$perm_r,
                  abundance_data = abundance_data, abund_table = abund_table)
@@ -136,7 +136,7 @@ ggsave(file.path(figures_path, "plot_data.pdf"),
        width = 140, height = 140, unit = "mm")
 
 
-## Plot COA results
+## Plot COA results ------
 g1 <- plot_table(x = abundance_data$coa_c, 
                  y = abundance_data$coa_r,
                  abundance_data = abundance_data, abund_table = abund_table,
@@ -163,7 +163,7 @@ ggsave(file.path(figures_path, "plot_coa.pdf"),
        width = 140, height = 140, unit = "mm")
 
 
-## Plot CCA-R results
+## Plot CCA-R results ------
 g1 <- plot_table(x = abundance_data$ccaR_c, 
                  y = abundance_data$ccaR_r,
                  abundance_data = abundance_data, abund_table = abund_table) 
@@ -188,7 +188,7 @@ g_ccaR
 ggsave(file.path(figures_path, "plot_ccaR.pdf"), 
        width = 140, height = 140, unit = "mm")
 
-## Plot CCA-Q results
+## Plot CCA-Q results ------
 g1 <- plot_table(x = abundance_data$ccaQ_c, 
                  y = abundance_data$ccaQ_r,
                  abundance_data = abundance_data, abund_table = abund_table) 
@@ -213,7 +213,7 @@ g_ccaQ
 ggsave(file.path(figures_path, "plot_ccaQ.pdf"), 
        width = 140, height = 140, unit = "mm")
 
-## Plot dc-CA results
+## Plot dc-CA results ------
 g1 <- plot_table(x = abundance_data$dcca_c, 
                  y = abundance_data$dcca_r,
                  abundance_data = abundance_data, abund_table = abund_table)
