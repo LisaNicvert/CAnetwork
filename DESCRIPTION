@@ -24,3 +24,5 @@ Imports:
     tibble,
     tidyr,
     tidyselect
+Suggests:
+    svglite
