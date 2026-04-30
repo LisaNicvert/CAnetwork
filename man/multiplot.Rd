@@ -24,6 +24,8 @@ multiplot(
   mult = 1,
   title = NULL,
   max.overlaps = 20,
+  force_pull = 1,
+  force = 1,
   labsize = 3,
   alphapoints = 0.8
 )
@@ -66,6 +68,10 @@ multiplot(
 \item{title}{plot title}
 
 \item{max.overlaps}{\code{max.overlaps} argument for \code{ggrepel::geom_text_repel}}
+
+\item{force_pull}{\code{force_pull} argument for \code{ggrepel::geom_text_repel}}
+
+\item{force}{\code{force} argument for \code{ggrepel::geom_text_repel}}
 
 \item{labsize}{text size for point labels}
 

@@ -219,6 +219,8 @@ plot_eig <- function(eigenvalues, showrank = FALSE) {
 #' @param title plot title
 #' @param alphapoints Transparency value for points
 #' @param labsize text size for point labels
+#' @param force_pull `force_pull` argument for `ggrepel::geom_text_repel`
+#' @param force `force` argument for `ggrepel::geom_text_repel`
 #'
 #' @return a ggplot
 #'
@@ -235,6 +237,8 @@ multiplot <- function(indiv_row = NULL, indiv_col = NULL,
                       mult = 1,
                       title = NULL,
                       max.overlaps = 20,
+                      force_pull = 1,
+                      force = 1,
                       labsize = 3,
                       alphapoints = 0.8) {
 
@@ -299,7 +303,9 @@ multiplot <- function(indiv_row = NULL, indiv_col = NULL,
                             label = indiv_col_lab),
                         col = col_color,
                         size = labsize,
-                        max.overlaps = max.overlaps)
+                        max.overlaps = max.overlaps,
+                        force_pull = force_pull,
+                        force = force)
     }
 
   }
@@ -311,7 +317,9 @@ multiplot <- function(indiv_row = NULL, indiv_col = NULL,
                           label = indiv_row_lab),
                       col = row_color,
                       size = labsize,
-                      max.overlaps = max.overlaps)
+                      max.overlaps = max.overlaps,
+                      force_pull = force_pull,
+                      force = force)
   }
 
   # Plot rows variables
