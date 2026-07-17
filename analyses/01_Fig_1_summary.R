@@ -79,17 +79,27 @@ cca_R <- pcaiv(coa_Y, traits_resource, scannf = FALSE)
 cca_Q <- pcaiv(t(coa_Y), traits_consumer, scannf = FALSE) 
 dcca_RQ <- dpcaiv(coa_Y, traits_resource, traits_consumer, scannf = FALSE)
 
-res_resource <- data.frame(Resource_sp = names_resource, coa_r = rank(coa_Y$l1[,1]),
-                           ccaR_r = rank(cca_R$l1[,1]), ccaQ_r = rank(cca_Q$c1[,1]), 
-                           dcca_r = rank(dcca_RQ$l1[,1]), perm_r = perm_resource) 
+# Get the ordering of resource/consumers according to principal coordinates
+# (first axis)
+res_resource <- data.frame(Resource_sp = names_resource, 
+                           coa_r = rank(coa_Y$li[,1]), # WA scores
+                           ccaR_r = rank(cca_R$ls[,1]), # LC scores
+                           ccaQ_r = rank(cca_Q$co[,1]), # WA scores (permuted table -> resources in co)
+                           dcca_r = rank(dcca_RQ$lsR[,1]), # LC scores
+                           perm_r = perm_resource)
 
-res_consumer <- data.frame(Consumer_sp = names_consumer, coa_c = rank(coa_Y$c1[,1]),
-                           ccaR_c = rank(cca_R$c1[,1]), ccaQ_c = rank(cca_Q$l1[,1]), 
-                           dcca_c = rank(dcca_RQ$c1[,1]), perm_c = perm_consumer) 
+res_consumer <- data.frame(Consumer_sp = names_consumer, 
+                           coa_c = rank(coa_Y$co[,1]), # WA scores
+                           ccaR_c = rank(cca_R$co[,1]), # WA scores
+                           ccaQ_c = rank(cca_Q$ls[,1]), # LC scores (permuted table -> consumers in ls)
+                           dcca_c = rank(dcca_RQ$lsQ[,1]), # LC scores
+                           perm_c = perm_consumer) 
 
 ## build a big table with all results
 abundance_data <- abundance_data_raw %>%
-  left_join(res_consumer, by = "Consumer_sp") %>% left_join(res_resource, by = "Resource_sp") %>% filter(Abundance > 0)
+  left_join(res_consumer, by = "Consumer_sp") %>% 
+  left_join(res_resource, by = "Resource_sp") %>% 
+  filter(Abundance > 0)
 
 
 # Plot --------------------------------------------------------------------

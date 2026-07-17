@@ -191,10 +191,16 @@ plot_table <- function(x, y,
                           y1 = stats::weighted.mean(score, w = weights), 
                           y2 = stats::weighted.mean(score, w = weights))
     p_data + geom_polygon(data = df, aes(x = xn, y = yn), 
-                          inherit.aes = FALSE, fill = "burlywood", alpha = 0.2) +
-      geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2), 
-                   arrow = arrow(type = "closed", length = ggplot2::unit(0.2, "cm")), 
-                   data = df_mean, inherit.aes = FALSE, lwd = 1, col = "burlywood", ) +
+                          inherit.aes = FALSE, 
+                          fill = "burlywood", alpha = 0.4) +
+      geom_segment(data = df_mean, 
+                   aes(x = x1, xend = x2, y = y1, yend = y2), 
+                   col = "burlywood",
+                   inherit.aes = FALSE, lwd = 1) +
+      geom_point(data = df_mean, 
+                 aes(x = x2, y = y2), 
+                 col = "burlywood",
+                 size = 4) +
       rphylopic::geom_phylopic(img = img, 
                     aes(x = df_mean$x1[1] - 0.3, 
                         y = stats::weighted.mean(score, w = weights)), 
@@ -217,15 +223,15 @@ plot_table <- function(x, y,
   
   if (WA) {
     highlight_points <- subset(abundance_data, Consumer_sp == "Consumer_H")
-    p_data <- plot_wa_consumer(p_data = p_data, 
-                               xbase = 8, 
-                               score = 1:6, weights = abund_table[,8])
     p_data <- p_data + geom_point(data = highlight_points, 
                                   aes(x =  coa_c, y = coa_r, size = Abundance), 
                                   shape = 21, 
                                   color = "burlywood", 
                                   fill = "black",
                                   stroke = 2)
+    p_data <- plot_wa_consumer(p_data = p_data, 
+                               xbase = 8, 
+                               score = 1:6, weights = abund_table[,8])
   }
   
   p_data
