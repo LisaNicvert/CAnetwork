@@ -14,6 +14,13 @@ colli <- "cornflowerblue"
 # Define threshold to filter interactions
 thr <- 1
 
+# log-transform traits?
+log_transform_traits <- TRUE
+
+# Transform interaction counts using log(x + 1)?
+transform_matrix <- FALSE
+
+
 # Run analyses ------------------------------------------------------------
 
 # Plot Figure 1 (writes Figure to figures/01_Fig_1_summary/)
@@ -28,13 +35,16 @@ quarto::quarto_render(file.path(analyses_folder, "03_example_network.qmd"),
                       execute_params = list(dataset = dataset,
                                             thr = thr,
                                             colco = colco, 
-                                            colli = colli))
+                                            colli = colli,
+                                            log_transform_traits = log_transform_traits))
 
 # Analyze all networks
 quarto::quarto_render(file.path(analyses_folder, "04_all_networks.qmd"),
                       execute_params = list(thr = thr, 
                                             colco = colco, 
-                                            colli = colli))
+                                            colli = colli,
+                                            log_transform_traits = log_transform_traits,
+                                            transform_matrix = transform_matrix))
 
 # Evaluate R2 correction (Appendix S1 Section S6)
 # This takes a long time to run (~17 hours) so results are precomputed

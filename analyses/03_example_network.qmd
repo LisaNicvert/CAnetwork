@@ -18,6 +18,8 @@ params:
   colco: "darkred"
   colli: "cornflowerblue"
   dataset: "Peru1"
+  log_transform_traits: FALSE
+  transform_matrix: TRUE
 bibliography: references.bib
 ---
 
@@ -109,6 +111,24 @@ interactions <- interactions[p, b]
 ```
 
 ```{r}
+if (params$transform_matrix) {
+  # Transform matrix counts using log(x + 1)
+  interactions <- log(interactions + 1)
+}
+
+
+if (params$log_transform_traits) {
+  # Log-transform traits
+  bird_traits <- bird_traits |> 
+    dplyr::mutate(across(c(KippsIndex, BillLength, BillWidth, Bodymass), 
+                         log))
+  plant_traits <- plant_traits |> 
+    dplyr::mutate(across(c(meanL, meanD1, meanHeight, CropMass), 
+                         log))
+}
+```
+
+```{r}
 # Rename columns
 plant_traits_labels <- c("fruit length", "fruit diameter", "plant height", "crop mass")
 names(plant_traits_labels) <- colnames(plant_traits)
@@ -186,8 +206,10 @@ plot_corcircle(cor = cca_plants$cor,
                label = plant_traits_labels,
                eig = cca_plants$eig)
 
-ggsave(file.path(figures_folder, "Fig_S1_S2a_cca_plants_corcircle.png"),
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_S1_S2a_cca_plants_corcircle.png"),
        width = 16, height = 13, units = "cm")
+}
 ```
 
 ### Biplots
@@ -207,8 +229,11 @@ multiplot(indiv_row = cca_plants$l1,
           max.overlaps = 15,
           force = 3,
           force_pull = 0.1)
-ggsave(file.path(figures_folder, "Fig_S1_S2b_cca_plants_bniches.png"),
+
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_S1_S2b_cca_plants_bniches.png"),
        width = 13, height = 13, units = "cm")
+}
 ```
 We could also represent plants niches with plants WA (weighted averaging) scores $U^\star$ (`ls`) at the mean of birds scores $V$ (`c1`).
 
@@ -255,8 +280,10 @@ plot_corcircle(cor = cor,
                label = bird_traits_labels,
                eig = cca_birds$eig)
 
-ggsave(file.path(figures_folder, "Fig_S1_S3a_cca_birds_corcircle.png"),
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_S1_S3a_cca_birds_corcircle.png"),
        width = 14, height = 11, units = "cm")
+}
 ```
 
 ### Biplots
@@ -285,8 +312,11 @@ multiplot(indiv_row = l1,
           force = 3,
           force_pull = 0.1) +
   ggtitle("Plant niches")
-ggsave(file.path(figures_folder, "Fig_S1_S3b_cca_birds_pniches.png"),
+
+if (!params$log_transform_traits  & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_S1_S3b_cca_birds_pniches.png"),
        width = 13, height = 11, units = "cm")
+}
 ```
 ## dc-CA
 
@@ -321,17 +351,35 @@ sum(dcca$eig[1:2])/sum(dcca$eig)
 ```{r corcircle}
 #| code-fold: true
 
-plot_corcircle(cor = dcca$corR, 
+# Invert axes to plot for transformed matrix
+if (params$transform_matrix) {
+  corR_plot <- -dcca$corR
+  corQ_plot <- -dcca$corQ
+} else {
+  corR_plot <- dcca$corR
+  corQ_plot <- dcca$corQ
+}
+
+plot_corcircle(cor = corR_plot, 
                col = params$colli,
                label = plant_traits_labels,
-               cor2 = dcca$corQ,
+               cor2 = corQ_plot, 
                col2 = params$colco,
                lty = "longdash",
                lty2 = "solid",
                label2 = bird_traits_labels,
                eig = cca_plants$eig)
-ggsave(file.path(figures_folder, "Fig_3a_dcca_corcircle_orig.svg"),
+
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_3a_dcca_corcircle_orig.svg"),
        width = 15, height = 11, units = "cm")
+} else if (params$log_transform_traits){
+  ggsave(file.path(figures_folder, "Fig_S1_S6a_dcca_corcircle_log.png"),
+       width = 15, height = 11, units = "cm")
+} else if (params$transform_matrix){
+  ggsave(file.path(figures_folder, "Fig_S1_S8a_dcca_corcircle_logm.png"),
+       width = 15, height = 11, units = "cm")
+}
 ```
 
 ### Biplots
@@ -344,13 +392,36 @@ We plot the biplots with a scaling appropriate to represent species niches:
 ```{r}
 #| code-fold: true
 
-xlim <- c(-4, 9)
-ylim <- c(-11, 4)
+if (!params$log_transform_traits & !params$transform_matrix) {
+  # Only use custom limits for main text analysis
+  xlim <- c(-4, 9)
+  ylim <- c(-11, 4)
+} else {
+  # For suppmat analyses, keep default
+  xlim <- NULL
+  ylim <- NULL
+}
+
 grad <- 4
 
+# Invert axes to plot for transformed matrix
+if (params$transform_matrix) {
+  lsR_plot <- -dcca$lsR
+  c1_plot <- -dcca$c1
+  
+  l1_plot <- -dcca$l1
+  lsQ_plot <- -dcca$lsQ
+} else {
+  lsR_plot <- dcca$lsR
+  c1_plot <- dcca$c1
+  
+  l1_plot <- dcca$l1
+  lsQ_plot <- dcca$lsQ
+}
+
 # Plant niches
-multiplot(indiv_row = dcca$lsR,
-          indiv_col = dcca$c1, 
+multiplot(indiv_row = lsR_plot,
+          indiv_col = c1_plot, 
           eig = dcca$eig, 
           row_color = params$colli, 
           col_color = params$colco, 
@@ -360,12 +431,20 @@ multiplot(indiv_row = dcca$lsR,
           max.overlaps = 15,
           force = 3,
           force_pull = 0.1)
-ggsave(file.path(figures_folder, "Fig_3b_dcca_pniches.png"),
-       width = 11, height = 11, units = "cm")
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_3b_dcca_pniches.png"),
+         width = 11, height = 11, units = "cm")
+} else if (params$log_transform_traits) {
+  ggsave(file.path(figures_folder, "Fig_S1_S6b_dcca_pniches_log.png"),
+         width = 11, height = 11, units = "cm")
+} else if (params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_S1_S8b_dcca_pniches_logm.png"),
+         width = 11, height = 11, units = "cm")
+}
 
 # Bird niches
-multiplot(indiv_row = dcca$l1,
-          indiv_col = dcca$lsQ,
+multiplot(indiv_row = l1_plot,
+          indiv_col = lsQ_plot,
           eig = dcca$eig, 
           row_color = params$colli, 
           col_color = params$colco,
@@ -375,8 +454,18 @@ multiplot(indiv_row = dcca$l1,
           max.overlaps = 15,
           force = 3,
           force_pull = 0.1)
-ggsave(file.path(figures_folder, "Fig_3c_dcca_bniches.png"),
+
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_3c_dcca_bniches.png"),
        width = 11, height = 11, units = "cm")
+} else if (params$log_transform_traits){
+  ggsave(file.path(figures_folder, "Fig_S1_S6c_dcca_bniches_log.png"),
+       width = 11, height = 11, units = "cm")
+} else if (params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_S1_S8c_dcca_bniches_logm.png"),
+       width = 11, height = 11, units = "cm")
+}
+
 ```
 
 ## Variance decomposition
@@ -560,8 +649,10 @@ for (colname in colnames(plant_traits)) {
 wrap_plots(glist) +  
   plot_layout(axis_titles = "collect_y", nrow = 1)
 
-ggsave(file.path(figures_folder, "Fig_S1_S1a_plant_traits.png"),
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_S1_S1a_plant_traits.png"),
        width = 26, height = 7, units = "cm")
+}
 ```
 
 ```{r, fig.width=8, fig.height=3}
@@ -594,8 +685,10 @@ for (colname in colnames(bird_traits)) {
 wrap_plots(glist) +  
   plot_layout(axis_titles = "collect_y", nrow = 1)
 
-ggsave(file.path(figures_folder, "Fig_S1_S1b_bird_traits.png"),
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_S1_S1b_bird_traits.png"),
        width = 26, height = 7, units = "cm")
+}
 ```
 
 ## Residuals of trait-based interaction niches (Appendix S1 Section 5)
@@ -623,8 +716,11 @@ padding <- 1
 
 # Difference between niche and traits for plants
 # lsR -> li
-# png(file.path(figures_folder, "Fig_S1_S4b_diff_plants.png"),
-#     width = 15, height = 15, units = "cm", res = 300)
+
+# if (!params$log_transform_traits & !params$transform_matrix) {
+#   png(file.path(figures_folder, "Fig_S1_S4b_diff_plants.png"),
+#       width = 15, height = 15, units = "cm", res = 300)
+# }
 s.match(dcca$lsR, dcca$li, xax = 1, yax = 2, 
         plabels.col = params$colli,
         plabels.cex = 0.8,
@@ -635,12 +731,16 @@ s.match(dcca$lsR, dcca$li, xax = 1, yax = 2,
         layout.widths = list(ylab.axis.padding = axis_title_padding,
                              left.padding = padding,
                              right.padding = padding))
-# dev.off()
+# if (!params$log_transform_traits & !params$transform_matrix) {
+#   dev.off()
+# }
 
 # Difference between niche and traits for birds
 # lsQ -> li
-# png(file.path(figures_folder, "Fig_S1_S4a_diff_birds.png"),
-#     width = 15, height = 15, units = "cm", res = 300)
+# if (!params$log_transform_traits & !params$transform_matrix) {
+#   png(file.path(figures_folder, "Fig_S1_S4a_diff_birds.png"),
+#       width = 15, height = 15, units = "cm", res = 300)
+# }
 s.match(dcca$lsQ, dcca$co, xax = 1, yax = 2, 
         plabels.col = params$colco,
         plabels.cex = 0.8,
@@ -650,7 +750,9 @@ s.match(dcca$lsQ, dcca$co, xax = 1, yax = 2,
         layout.widths = list(ylab.axis.padding = axis_title_padding,
                              left.padding = padding,
                              right.padding = padding))
-# dev.off()
+# if (!params$log_transform_traits & !params$transform_matrix) {
+#   dev.off()
+# }
 ```
 
 

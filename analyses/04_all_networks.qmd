@@ -17,6 +17,8 @@ params:
   thr: 1
   colco: "darkred"
   colli: "cornflowerblue"
+  log_transform_traits: FALSE
+  transform_matrix: FALSE
 bibliography: references.bib
 ---
 
@@ -121,6 +123,35 @@ for (i in 1:length(inter_list)) {
   pt_filtered <- pt_filtered[keep_rows, ]
   bt_filtered <- bt_filtered[keep_cols, ]
   
+  # Apply transformations (if needed)
+  if (params$transform_matrix) {
+    # Transform matrix counts using log(x + 1)
+    intermat <- log(intermat + 1)
+  }
+  
+  if (params$log_transform_traits) {
+    # Remove species where traits have values zero
+    pt <- pt |> filter(plant_species != "Miconia_307")
+    
+    zero_pt <- which(pt == 0, arr.ind = TRUE)
+    if (nrow(zero_pt) != 0) {
+      stop("Cannot log-transform plant trait equal to zero")
+    }
+    
+    zero_bt <- which(bt == 0, arr.ind = TRUE)
+    if (nrow(zero_bt) != 0) {
+      stop("Cannot log-transform bird trait equal to zero")
+    }
+    
+    # Log-transform traits
+    bt <- bt |> 
+      dplyr::mutate(across(c(KippsIndex, BillLength, BillWidth, Bodymass), 
+                           log))
+    pt <- pt |> 
+      dplyr::mutate(across(c(meanL, meanD1, meanHeight, CropMass), 
+                           log))
+  }
+
   # Store species code/names correspondences (not used)
   dataname <- names(inter_list)[i]
   pnames_list[[dataname]] <- pnames
@@ -350,8 +381,16 @@ median_df <- data.frame(type_name = names(median),
                      expand = c(0, 0)) &
   xlab(bquote("Corrected"~R^2)) 
 
-ggsave(file.path(figures_folder, "Fig_4_dcca_var_networks.png"),
+if (!params$log_transform_traits & !params$transform_matrix) {
+  ggsave(file.path(figures_folder, "Fig_4_dcca_var_networks.png"),
        width = 18, height = 10, units = "cm")
+} else if (params$log_transform_traits){
+  ggsave(file.path(figures_folder, "Fig_S1_S7_dcca_var_networks_log.png"),
+       width = 18, height = 10, units = "cm")
+} else if (params$transform_matrix){
+    ggsave(file.path(figures_folder, "Fig_S1_S9_dcca_var_networks_logm.png"),
+       width = 18, height = 10, units = "cm")
+}
 ```
 
 ```{r}
