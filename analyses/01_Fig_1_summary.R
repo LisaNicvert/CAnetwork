@@ -43,7 +43,7 @@ for (i in 1:length(names_consumer)) {
   )
 }
 
-abundance_data_raw <- bind_rows(data_list) # %>% filter(Abundance > 0) # Remove zero abundances for cleaner plot
+abundance_data_raw <- bind_rows(data_list) # |> filter(Abundance > 0) # Remove zero abundances for cleaner plot
 
 abund_table <- as.data.frame(pivot_wider(abundance_data_raw[,1:3], 
                                          names_from = Consumer_sp,
@@ -96,9 +96,9 @@ res_consumer <- data.frame(Consumer_sp = names_consumer,
                            perm_c = perm_consumer) 
 
 ## build a big table with all results
-abundance_data <- abundance_data_raw %>%
-  left_join(res_consumer, by = "Consumer_sp") %>% 
-  left_join(res_resource, by = "Resource_sp") %>% 
+abundance_data <- abundance_data_raw |>
+  left_join(res_consumer, by = "Consumer_sp") |> 
+  left_join(res_resource, by = "Resource_sp") |> 
   filter(Abundance > 0)
 
 
