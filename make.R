@@ -3,7 +3,6 @@
 library(here)
 library(quarto)
 
-
 # Set analyses path -------------------------------------------------------
 analyses_folder <- here("analyses")
 
@@ -14,11 +13,25 @@ colli <- "cornflowerblue"
 # Define threshold to filter interactions
 thr <- 1
 
+
+# Data transformations ----------------------------------------------------
+
+# To reproduce results from the main text: 
+# set log_transform_traits to FALSE and transform_matrix to ""
+
+# To reproduce results from Appendix S1 Section S8, 2 runs are needed:
+#   1) log_transform_traits = TRUE and transform_matrix = ""
+#   2) log_transform_traits = FALSE and transform_matrix = "log1p"
+
 # log-transform traits?
 log_transform_traits <- TRUE
 
-# Transform interaction counts using log(x + 1)?
-transform_matrix <- FALSE
+# Transform interaction counts
+# Possible values: 
+# - "log1p" for log(x + 1),
+# - "N2" for N2 preprocessing (see https://doi.org/10.32942/X2TT0B)
+# - "" for no transformation
+transform_matrix <- ""
 
 
 # Run analyses ------------------------------------------------------------
