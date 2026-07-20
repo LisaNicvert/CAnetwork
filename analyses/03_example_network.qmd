@@ -18,8 +18,8 @@ params:
   colco: "darkred"
   colli: "cornflowerblue"
   dataset: "Peru1"
-  log_transform_traits: TRUE
-  transform_matrix: "N2"
+  log_transform_traits: FALSE
+  transform_matrix: ""
 bibliography: references.bib
 ---
 
@@ -31,6 +31,7 @@ library(here)
 
 library(ggplot2)
 library(patchwork)
+library(ggtext)
 
 library(ade4)
 library(adegraphics)
@@ -41,7 +42,14 @@ library(effectsize)
 
 devtools::load_all()
 
-theme_set(theme_linedraw())
+theme_set(theme_linedraw() +
+            theme(
+      strip.background = element_rect(fill = "white", color = "black"),
+      strip.text        = element_text(color = "black"),
+      panel.background  = element_rect(fill = "white"),
+      panel.grid = element_line(colour = "grey")
+    )
+)
 
 # Paths
 figures_folder <- here("figures")
@@ -829,71 +837,164 @@ dcca_dou$eigenvalues/dcca$eig
 # tab <- as.matrix(dcca$l1) %*% diag(sqrt(dcca$eig)) %*% t(dcca$c1)
 # tab/dcca$tab # = 1
 yfit <- sum(interactions) * outer(dcca$lw, dcca$cw) * (1 + as.matrix(dcca$tab))
+```
 
+
+```{r}
 # Compare to frequencies predicted with douconca
 prec <- 1e-10
 yfit_dou <- fitted(dcca_dou,type = "response")
 all(abs(yfit_dou-yfit) < prec)
-
-resid <- yfit - interactions
-
-hist(resid)
-
-heatmap(resid)
 ```
 
 ```{r}
-# Matrix centering
-# P0 = as.matrix(interactions/sum(interactions))
-# 
-# P <- matrix(nrow = nrow(interactions),
-#              ncol = ncol(interactions))
-# for (i in 1:nrow(interactions)) {
-#   for (j in 1:ncol(interactions)) {
-#     P[i, j] <- P0[i, j]*(1/dcca$lw[i])*(1/dcca$cw[j]) - 1
-#   }
-# }
-# P/dcca$Y
-# 
-# P <- (P0*outer(1/dcca$lw, 1/dcca$cw) - 1)
-# P/dcca$Y
+# Get bird and plants codes/names table
+bird_codes <- bird_traits_codes[, c("bird_species_code", "bird_species_name")]
+plant_codes <- plant_traits_codes[, c("plant_species_code", "plant_species_name")]
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 15
+
+# Format data
+y_eq_df <- format_fit(interactions, yfit, 
+                      idcols = colnames(interactions), bcodes = bird_codes)
+
+# Add plant names
+y_eq_df <- y_eq_df |> 
+  dplyr::left_join(plant_codes, by = "plant_species_code")
+
+# Join codes and names
+y_eq_df <- y_eq_df |> 
+  dplyr::mutate(plant_species_name_code = paste0("*", plant_species_name, "*", " (", plant_species_code, ")")) |> 
+  dplyr::mutate(bird_species_name_code = paste0("*", bird_species_name, "*", " (", bird_species_code, ")"))
+
+# Get correlations by bird
+y_eq_cor_birds <- y_eq_df |> 
+  dplyr::group_by(bird_species_name_code) |> 
+  dplyr::summarize(cor = cor(values_x, values_y)) |> 
+  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+summary(y_eq_cor_birds$cor)
+
+# Plot birds
+ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
+  xlab("True interaction count") +
+  ylab("Fitted interaction count (full model)") +
+  geom_point() +
+  facet_wrap(facets = vars(bird_species_name_code), scales = "free") +
+  geom_label(data = y_eq_cor_birds,
+             aes(x = -Inf, y = Inf, label = label, col = cor),
+             show.legend = FALSE,
+             inherit.aes = FALSE,
+             hjust = -0.1, vjust = 1.4,
+             size = 3) +
+  scale_color_gradient2(low = "darkblue", mid = "grey80", high = "darkred",
+                        midpoint = 0) +
+  theme(axis.title = element_text(size = 15),
+        strip.text = ggtext::element_markdown(size = 7))
+
+ggsave(file.path(figures_folder, "Fig_S1_S10_pred_vs_count_birds_all.png"),
+       width = 34, height = 30, units = "cm")
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 15
+
+# Get correlations by plants
+y_eq_cor_plants <- y_eq_df |> 
+  dplyr::group_by(plant_species_name_code) |> 
+  dplyr::summarize(cor = cor(values_x, values_y)) |> 
+  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+summary(y_eq_cor_plants$cor)
+
+# Plot plants
+ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
+  xlab("True interaction count") +
+  ylab("Fitted interaction count (full model)") +
+  geom_point() +
+  facet_wrap(facets = vars(plant_species_name_code), scales = "free") +
+  geom_label(data = y_eq_cor_plants,
+             aes(x = -Inf, y = Inf, label = label, col = cor),
+             show.legend = FALSE,
+             inherit.aes = FALSE,
+             hjust = -0.1, vjust = 1.4,
+             size = 3) +
+  scale_color_gradient2(low = "darkblue", mid = "grey80", high = "darkred",
+                        midpoint = 0) +
+  theme(axis.title = element_text(size = 15),
+        strip.text = ggtext::element_markdown(size = 7))
+
+ggsave(file.path(figures_folder, "Fig_S1_S11_pred_vs_count_plants_all.png"),
+       width = 34, height = 30, units = "cm")
+```
+
+```{r}
+# Plot residuals
+resid <- yfit - interactions
+
+resid_df <- as.data.frame(resid) |> 
+  tibble::rownames_to_column("plant_species_code")
+
+resid_df <- resid_df |> 
+  tidyr::pivot_longer(cols = 2:ncol(resid_df),
+                      names_to = "bird_species_code",
+                      values_to = "residuals")
+
+resid_df <- resid_df |> 
+  dplyr::mutate(bird_species_code = factor(bird_species_code,
+                                           levels = rownames(dcca$lsQ)[rank(dcca$lsQ[,1], ties.method = "random")])) |> 
+  dplyr::mutate(plant_species_code = factor(plant_species_code,
+                                           levels = rownames(dcca$lsR)[rank(dcca$lsR[,1], ties.method = "random")]))
+
+ggplot(resid_df) +
+  geom_histogram(aes(x = residuals))
+
+ggplot(resid_df, aes(x = bird_species_code, y = plant_species_code)) +
+  geom_tile(aes(fill = residuals)) +
+  scale_fill_gradient2(low = "darkred", mid = "white", high = "darkblue", 
+                       midpoint = 0) +
+  coord_equal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
 ```
 
 
-## Cross-validation
+## Prediction
 
-In this section we perform the leave-one out experiment described in Appendix S1, Section S9.
+In this section we perform the prediction experiment described in Appendix S1, Section S9.
 
 ```{r}
 # Select bird species to predict
+# id_birds <- sample(1:ncol(interactions), size = 3, replace = FALSE)
 id_birds <- c(46, 33, 34)
+
 names(id_birds)  <- colnames(interactions)[id_birds]
 
 # Get initially predicted interactions for test birds
 ytest_true <- yfit[, id_birds]
 ytest_true_dou <- yfit_dou[, id_birds]
-
-# Get bird codes/names table
-bird_codes <- bird_traits_codes[, c("bird_species_code", "bird_species_name")]
 ```
 
 
 ### Fit dc-CA on training data
 
 ```{r}
-# Fit dcCA again on data subset 
-
 # ade4
-interactions_train <- interactions[,-id_birds]
-bird_traits_train <- bird_traits[-id_birds,]
+interactions_train <- interactions[, -id_birds]
+bird_traits_train <- bird_traits[-id_birds, ]
+
+interactions_test <- interactions[, id_birds]
+bird_traits_test <- bird_traits[id_birds, ]
+
 ca_train <- dudi.coa(interactions_train, 
-                   scannf = FALSE, 
-                   nf = min(dim(interactions_train) - 1))
+                     scannf = FALSE, 
+                     nf = min(dim(interactions_train) - 1))
 dcca_train <- dpcaiv(dudi = ca_train, 
-                   dfR = plant_traits,
-                   dfQ = bird_traits_train,
-                   nf = min(k, l),
-                   scannf = FALSE)
+                     dfR = plant_traits,
+                     dfQ = bird_traits_train,
+                     nf = min(k, l),
+                     scannf = FALSE)
 
 # douconca
 dcca_train_dou <- dc_CA(
@@ -907,12 +1008,11 @@ dcca_train_dou <- dc_CA(
 
 ```{r}
 # Get predicted values (ade4) -----
-# Apply scaling to bird_traits
+# Apply same scaling as train to bird_traits
 w <- dcca_train$cw
 mu <- apply(bird_traits_train, 2, weighted.mean, w = w)
 sd <- sapply(1:ncol(bird_traits_train), 
              function(i) sqrt(sum(w * (bird_traits_train[, i] - mu[i])^2)/sum(w)))
-bird_traits_test <- bird_traits[id_birds, ]
 bird_traits_test_sc <- scale(bird_traits_test, center = mu, scale = sd)
 
 # Regress traits with coefficients
@@ -964,13 +1064,19 @@ ytest_eq_dou <- predict(dcca_train_dou, type = "response",
                         newdata = list(traits = bird_traits_test,
                                        env = plant_traits),
                         weights = list(species = cw_sub_eq, sites = lw_sub_eq))
+```
 
+
+```{r}
+#| echo: false
+#| include: false
+# Compare to douconca
 ytest_eq/ytest_eq_dou
 ```
 
 
 ```{r}
-# Get initial predicted values from first model (using unit weights)
+# Get predicted values from first model (using unit weights)
 ytest_eq_true <- 1/sum(cw_sub_eq) * outer(lw_sub_eq, cw_sub_eq) * (1 + dcca$tab[, id_birds])
 
 ytest_eq_true_dou <- predict(dcca_dou, type = "response",
@@ -994,7 +1100,7 @@ ytest_eq_true/ytest_eq_true_dou
 # Compare to real data (not predict)
 
 # Format data
-y_eq_df <- format_fit(interactions[,id_birds], ytest, 
+y_eq_df <- format_fit(interactions[,id_birds], ytest_eq, 
                       idcols = names(id_birds), bcodes = bird_codes)
 
 # Get correlations
@@ -1012,7 +1118,40 @@ ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
   geom_label(data = y_eq_cor,
              aes(x = -Inf, y = Inf, label = label),
              inherit.aes = FALSE,
-             hjust = -0.2, vjust = 1.5)
+             hjust = -0.2, vjust = 1.5) +
+  theme(strip.text = element_text(face = "italic"))
+
+ggsave(file.path(figures_folder, "Fig_S1_S12a_pred_vs_count.png"),
+       width = 20, height = 7, units = "cm")
+```
+
+```{r}
+# Equal weights
+
+# Format data
+y_eq_df <- format_fit(ytest_eq_true, ytest_eq, 
+                      idcols = names(id_birds), bcodes = bird_codes)
+
+# Get correlations
+y_eq_cor <- y_eq_df |> 
+  dplyr::group_by(bird_species_name) |> 
+  dplyr::summarize(cor = cor(values_x, values_y)) |> 
+  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+
+# Plot
+ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
+  xlab("Fitted interaction count (full model)") +
+  ylab("Predicted interaction count") +
+  geom_point() +
+  facet_wrap(facets = vars(bird_species_name), scales = "free") +
+  geom_label(data = y_eq_cor,
+             aes(x = -Inf, y = Inf, label = label),
+             inherit.aes = FALSE,
+             hjust = -0.2, vjust = 1.5) +
+  theme(strip.text = element_text(face = "italic"))
+
+ggsave(file.path(figures_folder, "Fig_S1_S12b_pred_vs_pred.png"),
+       width = 20, height = 7, units = "cm")
 ```
 
 ```{r}
@@ -1037,36 +1176,7 @@ ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
   geom_label(data = y_eq_cor,
              aes(x = -Inf, y = Inf, label = label),
              inherit.aes = FALSE,
-             hjust = -0.2, vjust = 1.5)
+             hjust = -0.2, vjust = 1.5) +
+  theme(strip.text = element_text(face = "italic"))
 ```
-
-```{r}
-# Equal weights
-
-# Format data
-y_eq_df <- format_fit(ytest_eq_true, ytest_eq, 
-                      idcols = names(id_birds), bcodes = bird_codes)
-
-# Get correlations
-y_eq_cor <- y_eq_df |> 
-  dplyr::group_by(bird_species_name) |> 
-  dplyr::summarize(cor = cor(values_x, values_y)) |> 
-  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
-
-# Plot
-ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
-  xlab("Fitted interaction count (knows weights)") +
-  ylab("Predicted interaction count (weights = 1)") +
-  geom_point() +
-  facet_wrap(facets = vars(bird_species_name), scales = "free") +
-  geom_label(data = y_eq_cor,
-             aes(x = -Inf, y = Inf, label = label),
-             inherit.aes = FALSE,
-             hjust = -0.2, vjust = 1.5)
-```
-
-
-
-
-
 
