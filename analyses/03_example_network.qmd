@@ -18,8 +18,8 @@ params:
   colco: "darkred"
   colli: "cornflowerblue"
   dataset: "Peru1"
-  log_transform_traits: FALSE
-  transform_matrix: TRUE
+  log_transform_traits: TRUE
+  transform_matrix: "N2"
 bibliography: references.bib
 ---
 
@@ -35,9 +35,13 @@ library(patchwork)
 library(ade4)
 library(adegraphics)
 
+library(douconca)
+
 library(effectsize)
 
 devtools::load_all()
+
+theme_set(theme_linedraw())
 
 # Paths
 figures_folder <- here("figures")
@@ -111,9 +115,11 @@ interactions <- interactions[p, b]
 ```
 
 ```{r}
-if (params$transform_matrix) {
+if (params$transform_matrix == "log1p") {
   # Transform matrix counts using log(x + 1)
   interactions <- log(interactions + 1)
+} else if (params$transform_matrix == "N2") {
+  interactions <- douconca::ipf2N2(interactions)
 }
 
 
@@ -206,7 +212,7 @@ plot_corcircle(cor = cca_plants$cor,
                label = plant_traits_labels,
                eig = cca_plants$eig)
 
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_S1_S2a_cca_plants_corcircle.png"),
        width = 16, height = 13, units = "cm")
 }
@@ -230,7 +236,7 @@ multiplot(indiv_row = cca_plants$l1,
           force = 3,
           force_pull = 0.1)
 
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_S1_S2b_cca_plants_bniches.png"),
        width = 13, height = 13, units = "cm")
 }
@@ -280,7 +286,7 @@ plot_corcircle(cor = cor,
                label = bird_traits_labels,
                eig = cca_birds$eig)
 
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_S1_S3a_cca_birds_corcircle.png"),
        width = 14, height = 11, units = "cm")
 }
@@ -313,7 +319,7 @@ multiplot(indiv_row = l1,
           force_pull = 0.1) +
   ggtitle("Plant niches")
 
-if (!params$log_transform_traits  & !params$transform_matrix) {
+if (!params$log_transform_traits  & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_S1_S3b_cca_birds_pniches.png"),
        width = 13, height = 11, units = "cm")
 }
@@ -352,7 +358,7 @@ sum(dcca$eig[1:2])/sum(dcca$eig)
 #| code-fold: true
 
 # Invert axes to plot for transformed matrix
-if (params$transform_matrix) {
+if (params$transform_matrix == "log1p") {
   corR_plot <- -dcca$corR
   corQ_plot <- -dcca$corQ
 } else {
@@ -370,13 +376,13 @@ plot_corcircle(cor = corR_plot,
                label2 = bird_traits_labels,
                eig = cca_plants$eig)
 
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_3a_dcca_corcircle_orig.svg"),
        width = 15, height = 11, units = "cm")
 } else if (params$log_transform_traits){
   ggsave(file.path(figures_folder, "Fig_S1_S6a_dcca_corcircle_log.png"),
        width = 15, height = 11, units = "cm")
-} else if (params$transform_matrix){
+} else if (params$transform_matrix == "log1p"){
   ggsave(file.path(figures_folder, "Fig_S1_S8a_dcca_corcircle_logm.png"),
        width = 15, height = 11, units = "cm")
 }
@@ -392,7 +398,7 @@ We plot the biplots with a scaling appropriate to represent species niches:
 ```{r}
 #| code-fold: true
 
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   # Only use custom limits for main text analysis
   xlim <- c(-4, 9)
   ylim <- c(-11, 4)
@@ -405,7 +411,7 @@ if (!params$log_transform_traits & !params$transform_matrix) {
 grad <- 4
 
 # Invert axes to plot for transformed matrix
-if (params$transform_matrix) {
+if (params$transform_matrix == "log1p") {
   lsR_plot <- -dcca$lsR
   c1_plot <- -dcca$c1
   
@@ -431,13 +437,13 @@ multiplot(indiv_row = lsR_plot,
           max.overlaps = 15,
           force = 3,
           force_pull = 0.1)
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_3b_dcca_pniches.png"),
          width = 11, height = 11, units = "cm")
 } else if (params$log_transform_traits) {
   ggsave(file.path(figures_folder, "Fig_S1_S6b_dcca_pniches_log.png"),
          width = 11, height = 11, units = "cm")
-} else if (params$transform_matrix) {
+} else if (params$transform_matrix == "log1p") {
   ggsave(file.path(figures_folder, "Fig_S1_S8b_dcca_pniches_logm.png"),
          width = 11, height = 11, units = "cm")
 }
@@ -455,13 +461,13 @@ multiplot(indiv_row = l1_plot,
           force = 3,
           force_pull = 0.1)
 
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_3c_dcca_bniches.png"),
        width = 11, height = 11, units = "cm")
 } else if (params$log_transform_traits){
   ggsave(file.path(figures_folder, "Fig_S1_S6c_dcca_bniches_log.png"),
        width = 11, height = 11, units = "cm")
-} else if (params$transform_matrix) {
+} else if (params$transform_matrix == "log1p") {
   ggsave(file.path(figures_folder, "Fig_S1_S8c_dcca_bniches_logm.png"),
        width = 11, height = 11, units = "cm")
 }
@@ -588,28 +594,34 @@ The code below exports trait tables with species names and codes.
 
 ```{r}
 # Birds
-bird_traits_codes$bird_species <- gsub("_", " ",
-                                       bird_traits_codes$bird_species)
+bird_traits_codes$bird_species_name <- gsub("_", " ",
+                                            bird_traits_codes$bird_species)
 bird_traits_codes$bird_species <- paste0("\\textit{",
-                                         bird_traits_codes$bird_species,"}")
+                                         bird_traits_codes$bird_species_name,"}")
 
 if (!dir.exists(out_folder)) {
   dir.create(out_folder, recursive = TRUE, showWarnings = FALSE)
 }
 
-write.table(bird_traits_codes, sep = " & ", 
+# Remove last column without textit
+bird_traits_codes_write <- bird_traits_codes[, c("bird_species_code", "bird_species", 
+                                                 "KippsIndex", "BillLength", "BillWidth", "Bodymass")]
+write.table(bird_traits_codes_write, sep = " & ", 
             eol = " \\\\\n",
             quote = FALSE, 
             col.names = FALSE, row.names = FALSE, 
             file = file.path(out_folder, "birds_latex.txt"))
 
 # Plants
-plant_traits_codes$plant_species <- gsub("_", " ",
-                                         plant_traits_codes$plant_species)
+plant_traits_codes$plant_species_name <- gsub("_", " ",
+                                              plant_traits_codes$plant_species)
 plant_traits_codes$plant_species <- paste0("\\textit{",
-                                             plant_traits_codes$plant_species,"}")
+                                             plant_traits_codes$plant_species_name,"}")
 
-write.table(plant_traits_codes, sep = " & ", 
+# Remove last column without textit
+plant_traits_codes_write <- plant_traits_codes[, c("plant_species_code", "plant_species", 
+                                                   "meanL", "meanD1", "meanHeight", "CropMass")]
+write.table(plant_traits_codes_write, sep = " & ", 
             eol = " \\\\\n",
             quote = FALSE, 
             col.names = FALSE, row.names = FALSE, 
@@ -649,7 +661,7 @@ for (colname in colnames(plant_traits)) {
 wrap_plots(glist) +  
   plot_layout(axis_titles = "collect_y", nrow = 1)
 
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_S1_S1a_plant_traits.png"),
        width = 26, height = 7, units = "cm")
 }
@@ -685,7 +697,7 @@ for (colname in colnames(bird_traits)) {
 wrap_plots(glist) +  
   plot_layout(axis_titles = "collect_y", nrow = 1)
 
-if (!params$log_transform_traits & !params$transform_matrix) {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_S1_S1b_bird_traits.png"),
        width = 26, height = 7, units = "cm")
 }
@@ -717,7 +729,7 @@ padding <- 1
 # Difference between niche and traits for plants
 # lsR -> li
 
-# if (!params$log_transform_traits & !params$transform_matrix) {
+# if (!params$log_transform_traits & params$transform_matrix == "") {
 #   png(file.path(figures_folder, "Fig_S1_S4b_diff_plants.png"),
 #       width = 15, height = 15, units = "cm", res = 300)
 # }
@@ -731,13 +743,13 @@ s.match(dcca$lsR, dcca$li, xax = 1, yax = 2,
         layout.widths = list(ylab.axis.padding = axis_title_padding,
                              left.padding = padding,
                              right.padding = padding))
-# if (!params$log_transform_traits & !params$transform_matrix) {
+# if (!params$log_transform_traits & params$transform_matrix == "") {
 #   dev.off()
 # }
 
 # Difference between niche and traits for birds
 # lsQ -> li
-# if (!params$log_transform_traits & !params$transform_matrix) {
+# if (!params$log_transform_traits & params$transform_matrix == "") {
 #   png(file.path(figures_folder, "Fig_S1_S4a_diff_birds.png"),
 #       width = 15, height = 15, units = "cm", res = 300)
 # }
@@ -750,7 +762,7 @@ s.match(dcca$lsQ, dcca$co, xax = 1, yax = 2,
         layout.widths = list(ylab.axis.padding = axis_title_padding,
                              left.padding = padding,
                              right.padding = padding))
-# if (!params$log_transform_traits & !params$transform_matrix) {
+# if (!params$log_transform_traits & params$transform_matrix == "") {
 #   dev.off()
 # }
 ```
@@ -795,3 +807,266 @@ s.match(ls, li, xax = 1, yax = 2,
         plabels.col = params$colco,
         plabels.cex = 0.8)
 ```
+
+## Model fit
+
+```{r}
+# Perform the same dc-CA, but with package douconca
+fEnv <- interactions ~ meanL + meanD1 + meanHeight + CropMass
+fTraits <- interactions ~ KippsIndex + BillLength + BillWidth + Bodymass
+
+dcca_dou <- douconca::dc_CA(
+  formulaEnv = fEnv, formulaTraits = fTraits,
+  dataEnv = plant_traits, dataTraits = bird_traits,
+  divideBySiteTotals = FALSE
+  )
+
+dcca_dou$eigenvalues/dcca$eig
+```
+
+```{r}
+# Get frequencies predicted by dcCA (backtransform centered matrix on interactions scale)
+# tab <- as.matrix(dcca$l1) %*% diag(sqrt(dcca$eig)) %*% t(dcca$c1)
+# tab/dcca$tab # = 1
+yfit <- sum(interactions) * outer(dcca$lw, dcca$cw) * (1 + as.matrix(dcca$tab))
+
+# Compare to frequencies predicted with douconca
+prec <- 1e-10
+yfit_dou <- fitted(dcca_dou,type = "response")
+all(abs(yfit_dou-yfit) < prec)
+
+resid <- yfit - interactions
+
+hist(resid)
+
+heatmap(resid)
+```
+
+```{r}
+# Matrix centering
+# P0 = as.matrix(interactions/sum(interactions))
+# 
+# P <- matrix(nrow = nrow(interactions),
+#              ncol = ncol(interactions))
+# for (i in 1:nrow(interactions)) {
+#   for (j in 1:ncol(interactions)) {
+#     P[i, j] <- P0[i, j]*(1/dcca$lw[i])*(1/dcca$cw[j]) - 1
+#   }
+# }
+# P/dcca$Y
+# 
+# P <- (P0*outer(1/dcca$lw, 1/dcca$cw) - 1)
+# P/dcca$Y
+```
+
+
+## Cross-validation
+
+In this section we perform the leave-one out experiment described in Appendix S1, Section S9.
+
+```{r}
+# Select bird species to predict
+id_birds <- c(46, 33, 34)
+names(id_birds)  <- colnames(interactions)[id_birds]
+
+# Get initially predicted interactions for test birds
+ytest_true <- yfit[, id_birds]
+ytest_true_dou <- yfit_dou[, id_birds]
+
+# Get bird codes/names table
+bird_codes <- bird_traits_codes[, c("bird_species_code", "bird_species_name")]
+```
+
+
+### Fit dc-CA on training data
+
+```{r}
+# Fit dcCA again on data subset 
+
+# ade4
+interactions_train <- interactions[,-id_birds]
+bird_traits_train <- bird_traits[-id_birds,]
+ca_train <- dudi.coa(interactions_train, 
+                   scannf = FALSE, 
+                   nf = min(dim(interactions_train) - 1))
+dcca_train <- dpcaiv(dudi = ca_train, 
+                   dfR = plant_traits,
+                   dfQ = bird_traits_train,
+                   nf = min(k, l),
+                   scannf = FALSE)
+
+# douconca
+dcca_train_dou <- dc_CA(
+  formulaEnv = fEnv, formulaTraits = fTraits,
+  dataEnv = plant_traits, dataTraits = bird_traits_train,
+  response = interactions_train,
+  divideBySiteTotals = FALSE)
+```
+
+### 1/ni. ir 1/n.j weights
+
+```{r}
+# Get predicted values (ade4) -----
+# Apply scaling to bird_traits
+w <- dcca_train$cw
+mu <- apply(bird_traits_train, 2, weighted.mean, w = w)
+sd <- sapply(1:ncol(bird_traits_train), 
+             function(i) sqrt(sum(w * (bird_traits_train[, i] - mu[i])^2)/sum(w)))
+bird_traits_test <- bird_traits[id_birds, ]
+bird_traits_test_sc <- scale(bird_traits_test, center = mu, scale = sd)
+
+# Regress traits with coefficients
+co_test <- as.matrix(cbind(1, bird_traits_test_sc)) %*% as.matrix(dcca_train$faQ)
+c1_test <- sweep(co_test, 2, sqrt(dcca_train$eig), "/")
+
+# # Test on same data used for fitting
+# bird_traits_train_sc <- scale(bird_traits_train, center = mu, scale = sd)
+# co_test <- as.matrix(cbind(1, bird_traits_train_sc)) %*% as.matrix(dcca_train$faQ)
+# co_test/dcca_train$co
+# c1_test <- sweep(co_test, 2, sqrt(dcca_train$eig), "/")
+# c1_test/dcca_train$c1
+
+# Reconstruct fitted values (use unit weights)
+tab_test <- as.matrix(dcca_train$l1) %*% diag(sqrt(dcca_train$eig)) %*% t(c1_test)
+cw_sub <- rep(1/length(id_birds), length(id_birds))
+lw_sub <- rep(1/nrow(interactions_train), nrow(interactions_train))
+
+ytest <- 1/sum(cw_sub) * outer(lw_sub, cw_sub) * (1 + tab_test)
+
+# Get predicted values (douconca) -----
+ytest_dou <- predict(
+  dcca_train_dou, type = "response",
+  newdata = list(traits = bird_traits_test,
+                 env = plant_traits))
+```
+
+
+```{r}
+#| echo: false
+#| include: false
+# Compare to douconca -> same except for spp with no interaction (P20 and P39)
+ytest_dou/ytest
+
+which(rowSums(interactions_train) == 0)
+```
+
+
+### Equal weights
+
+```{r}
+# Use equal weights
+cw_sub_eq <- rep(1, length(id_birds))
+lw_sub_eq <- rep(1, nrow(interactions_train))
+
+ytest_eq <- 1/sum(cw_sub_eq) * outer(lw_sub_eq, cw_sub_eq) * (1 + tab_test)
+
+ytest_eq_dou <- predict(dcca_train_dou, type = "response",
+                        newdata = list(traits = bird_traits_test,
+                                       env = plant_traits),
+                        weights = list(species = cw_sub_eq, sites = lw_sub_eq))
+
+ytest_eq/ytest_eq_dou
+```
+
+
+```{r}
+# Get initial predicted values from first model (using unit weights)
+ytest_eq_true <- 1/sum(cw_sub_eq) * outer(lw_sub_eq, cw_sub_eq) * (1 + dcca$tab[, id_birds])
+
+ytest_eq_true_dou <- predict(dcca_dou, type = "response",
+                             newdata = list(traits = bird_traits_test,
+                                            env = plant_traits),
+                             weights = list(species = cw_sub_eq, sites = lw_sub_eq))
+
+ytest_eq_true/ytest_eq_true_dou
+
+# # If we used initial weights: This corresponds more or less to yfit (factor sum(interactions[, id_birds]) = 723)
+# ytest_eq_dou <- predict(dcca_dou, type = "response",
+#                           newdata = list(traits = bird_traits_test,
+#                                          env = plant_traits),
+#                           weights = list(species = dcca$cw[id_birds], sites = dcca$lw))
+# yfit_sel/ytest_eq_dou
+```
+
+### Plots
+
+```{r}
+# Compare to real data (not predict)
+
+# Format data
+y_eq_df <- format_fit(interactions[,id_birds], ytest, 
+                      idcols = names(id_birds), bcodes = bird_codes)
+
+# Get correlations
+y_eq_cor <- y_eq_df |> 
+  dplyr::group_by(bird_species_name) |> 
+  dplyr::summarize(cor = cor(values_x, values_y)) |> 
+  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+
+# Plot
+ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
+  xlab("Observed interaction count") +
+  ylab("Predicted interaction count") +
+  geom_point() +
+  facet_wrap(facets = vars(bird_species_name), scales = "free") +
+  geom_label(data = y_eq_cor,
+             aes(x = -Inf, y = Inf, label = label),
+             inherit.aes = FALSE,
+             hjust = -0.2, vjust = 1.5)
+```
+
+```{r}
+# 1/ni. / 1/n.j weights
+
+# Format data
+y_eq_df <- format_fit(ytest_true, ytest, 
+                      idcols = names(id_birds), bcodes = bird_codes)
+
+# Get correlations
+y_eq_cor <- y_eq_df |> 
+  dplyr::group_by(bird_species_name) |> 
+  dplyr::summarize(cor = cor(values_x, values_y)) |> 
+  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+
+# Plot
+ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
+  xlab("Fitted interaction count") +
+  ylab("Predicted interaction count") +
+  geom_point() +
+  facet_wrap(facets = vars(bird_species_name), scales = "free") +
+  geom_label(data = y_eq_cor,
+             aes(x = -Inf, y = Inf, label = label),
+             inherit.aes = FALSE,
+             hjust = -0.2, vjust = 1.5)
+```
+
+```{r}
+# Equal weights
+
+# Format data
+y_eq_df <- format_fit(ytest_eq_true, ytest_eq, 
+                      idcols = names(id_birds), bcodes = bird_codes)
+
+# Get correlations
+y_eq_cor <- y_eq_df |> 
+  dplyr::group_by(bird_species_name) |> 
+  dplyr::summarize(cor = cor(values_x, values_y)) |> 
+  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+
+# Plot
+ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
+  xlab("Fitted interaction count (knows weights)") +
+  ylab("Predicted interaction count (weights = 1)") +
+  geom_point() +
+  facet_wrap(facets = vars(bird_species_name), scales = "free") +
+  geom_label(data = y_eq_cor,
+             aes(x = -Inf, y = Inf, label = label),
+             inherit.aes = FALSE,
+             hjust = -0.2, vjust = 1.5)
+```
+
+
+
+
+
+
