@@ -131,3 +131,42 @@ create_code <- function(col, code_pattern = NA, name = NA){
 
   return(dfcode)
 }
+
+#' Format fits
+#' 
+#' Format fits matrices for plotting, i.e. pivot longer each
+#' matrix and join them. Optionnally also add bird codes.
+#'
+#' @param matx first matrix (values will be in values_x)
+#' @param maty second matrix (values will be in values_x)
+#' @param idcols columns to pivor
+#' @param bcodes optional df of bird codes + names to merge names (codes must be named
+#' "bird_species_code")
+#'
+#' @returns A long dataframe merged version of the 2 matrices, where each row is an interaction and values
+#' of the first and second matrix are respectively in "values_x" and "values_y"
+#' 
+#' @export
+format_fit <- function(matx, maty, idcols, bcodes = NULL) {
+  
+  dfx <- as.data.frame(matx) |> 
+    tibble::rownames_to_column("plant_species_code") |> 
+    tidyr::pivot_longer(cols = all_of(idcols), 
+                        names_to = "bird_species_code", values_to = "values_x")
+  
+  dfy <- as.data.frame(maty) |> 
+    tibble::rownames_to_column("plant_species_code") |> 
+    tidyr::pivot_longer(cols = all_of(idcols), 
+                        names_to = "bird_species_code", values_to = "values_y")
+  
+  df <- dfx |> 
+    dplyr::left_join(dfy, by = c("bird_species_code", "plant_species_code"))
+  
+  if (!is.null(bcodes)) {
+    df <- df |> 
+      dplyr::left_join(bcodes,
+                       by = c("bird_species_code"))
+  }
+  
+  return(df)
+}
