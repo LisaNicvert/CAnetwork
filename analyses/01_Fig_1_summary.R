@@ -82,17 +82,17 @@ dcca_RQ <- dpcaiv(coa_Y, traits_resource, traits_consumer, scannf = FALSE)
 # Get the ordering of resource/consumers according to principal coordinates
 # (first axis)
 res_resource <- data.frame(Resource_sp = names_resource, 
-                           coa_r = rank(coa_Y$li[,1]), # WA scores
-                           ccaR_r = rank(cca_R$ls[,1]), # LC scores
-                           ccaQ_r = rank(cca_Q$co[,1]), # WA scores (permuted table -> resources in co)
-                           dcca_r = rank(dcca_RQ$lsR[,1]), # LC scores
+                           coa_r = rank(coa_Y$l1[,1]), # WA scores (only WA scores exist with CA)
+                           ccaR_r = rank(cca_R$l1[,1]), # LC scores
+                           ccaQ_r = rank(cca_Q$c1[,1]), # WA scores (permuted table -> resources in co)
+                           dcca_r = rank(dcca_RQ$l1[,1]), # LC scores
                            perm_r = perm_resource)
 
 res_consumer <- data.frame(Consumer_sp = names_consumer, 
-                           coa_c = rank(coa_Y$co[,1]), # WA scores
-                           ccaR_c = rank(cca_R$co[,1]), # WA scores
-                           ccaQ_c = rank(cca_Q$ls[,1]), # LC scores (permuted table -> consumers in ls)
-                           dcca_c = rank(dcca_RQ$lsQ[,1]), # LC scores
+                           coa_c = rank(coa_Y$c1[,1]), # WA scores (only WA scores exist with CA)
+                           ccaR_c = rank(cca_R$c1[,1]), # WA scores
+                           ccaQ_c = rank(cca_Q$l1[,1]), # LC scores (permuted table -> consumers in ls)
+                           dcca_c = rank(dcca_RQ$c1[,1]), # LC scores
                            perm_c = perm_consumer) 
 
 ## build a big table with all results
@@ -117,8 +117,6 @@ g3 <- plot_traits_data(traits = traits_consumer, label = perm_consumer,
 patch_plot(g1, g2, g3, 
            n_consumer = n_consumer, n_resource = n_resource,
            traits_dim = 2)
-ggsave(file.path(figures_path, "plot_data0.pdf"), 
-       width = 140, height = 140, unit = "mm")
 
 ## Plot the permuted original data ------
 g1 <- plot_table(x = abundance_data$perm_c, 
@@ -133,17 +131,11 @@ g3 <- plot_traits_data(traits = traits_consumer, label = perm_consumer,
 
 g_data <- patch_plot(g1, g2, g3, 
                      n_consumer = n_consumer, n_resource = n_resource,
-                     traits_dim = 2) + 
-  plot_annotation(
-    caption = bquote("Original data tables (" * bold(R) * ", " * bold(L) * " and " * bold(Q) * ")"),
-    theme = theme(
-        plot.caption = element_text(hjust = 0.5, vjust = 1, size = 20)
-        )
-    )
+                     traits_dim = 2)
 
 g_data    
-ggsave(file.path(figures_path, "plot_data.pdf"), 
-       width = 140, height = 140, unit = "mm")
+ggsave(file.path(figures_path, "Fig_1a_plot_data.png"), 
+       width = 180, height = 140, unit = "mm")
 
 
 ## Plot COA results ------
@@ -162,15 +154,17 @@ g3 <- plot_traits(traits = traits_consumer, order =  unique(abundance_data$coa_c
 g_coa <- patch_plot(g1, g2, g3, 
                     n_consumer = n_consumer, n_resource = n_resource) +  
     plot_annotation(
-        caption = bquote("CA of " * bold(L) * " (" * delta[1] * " = " * .(round(coa_Y$eig[1], 2)) * ")"),
         theme = theme(
             plot.caption = element_text(hjust = 0.5, vjust = 1, size = 20)
         )
     )
 
+# Delta COA
+round(coa_Y$eig[1], 2)
+
 g_coa
-ggsave(file.path(figures_path, "plot_coa.pdf"), 
-       width = 140, height = 140, unit = "mm")
+ggsave(file.path(figures_path, "Fig_1b_plot_coa.png"), 
+       width = 180, height = 140, unit = "mm")
 
 
 ## Plot CCA-R results ------
@@ -186,17 +180,14 @@ g3 <- plot_traits(traits = traits_consumer,
                   label = perm_consumer,
                   img = img_consumer, type = "consumer")
 g_ccaR <- patch_plot(g1, g2, g3, 
-                     n_consumer = n_consumer, n_resource = n_resource) + 
-    plot_annotation(
-        caption = bquote("CCA constrained by " * bold(R) * " (" * delta[1] * " = " * .(round(cca_R$eig[1], 2)) * ")"),
-        theme = theme(
-            plot.caption = element_text(hjust = 0.5, vjust = 1, size = 20)
-        )
-    )
+                     n_consumer = n_consumer, n_resource = n_resource)
+
+# Delta CCA R
+round(cca_R$eig[1], 2)
 
 g_ccaR
-ggsave(file.path(figures_path, "plot_ccaR.pdf"), 
-       width = 140, height = 140, unit = "mm")
+ggsave(file.path(figures_path, "Fig_1c_plot_ccaR.png"), 
+       width = 180, height = 140, unit = "mm")
 
 ## Plot CCA-Q results ------
 g1 <- plot_table(x = abundance_data$ccaQ_c, 
@@ -211,17 +202,14 @@ g3 <- plot_traits(traits = traits_consumer,
                   label = perm_consumer, fill = col_consumer,
                   img = img_consumer, type = "consumer")
 g_ccaQ <- patch_plot(g1, g2, g3, 
-                     n_consumer = n_consumer, n_resource = n_resource) + 
-    plot_annotation(
-        caption = bquote("CCA constrained by " * bold(Q) * " (" * delta[1] * " = " * .(round(cca_Q$eig[1], 2)) * ")"),
-        theme = theme(
-            plot.caption = element_text(hjust = 0.5, vjust = 1, size = 20)
-        )
-    )
+                     n_consumer = n_consumer, n_resource = n_resource)
+
+# Delta CCA Q
+round(cca_Q$eig[1], 2)
 
 g_ccaQ
-ggsave(file.path(figures_path, "plot_ccaQ.pdf"), 
-       width = 140, height = 140, unit = "mm")
+ggsave(file.path(figures_path, "Fig_1d_plot_ccaQ.png"), 
+       width = 180, height = 140, unit = "mm")
 
 ## Plot dc-CA results ------
 g1 <- plot_table(x = abundance_data$dcca_c, 
@@ -236,15 +224,14 @@ g3 <- plot_traits(traits = traits_consumer,
                   label = perm_consumer, fill = col_consumer,
                   img = img_consumer, type = "consumer")
 g_dcca <- patch_plot(g1, g2, g3, 
-                     n_consumer = n_consumer, n_resource = n_resource) + 
-    plot_annotation(
-        caption = bquote("dc-CA constrained by " * bold(R) * " and " * bold(Q) * " (" * delta[1] * " = " * .(round(dcca_RQ$eig[1], 2)) * ")"),
-        theme = theme(
-            plot.caption = element_text(hjust = 0.5, vjust = 1, size = 20)
-        )
-    )
+                     n_consumer = n_consumer, n_resource = n_resource)
+
+
+# Delta CCA Q
+round(dcca_RQ$eig[1], 2)
+
 
 
 g_dcca
-ggsave(file.path(figures_path, "plot_dcca.pdf"), 
-       width = 140, height = 140, unit = "mm")
+ggsave(file.path(figures_path, "Fig_1e_plot_dcca.png"), 
+       width = 180, height = 140, unit = "mm")
