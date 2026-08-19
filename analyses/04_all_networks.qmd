@@ -389,11 +389,8 @@ if (!params$log_transform_traits & params$transform_matrix == "") {
 } else if (params$log_transform_traits){
   ggsave(file.path(figures_folder, "Fig_S1_S7_dcca_var_networks_log.png"),
        width = 18, height = 10, units = "cm")
-} else if (params$transform_matrix == "log1p"){
-    ggsave(file.path(figures_folder, "Fig_S1_S9_dcca_var_networks_logm.png"),
-       width = 18, height = 10, units = "cm")
 } else if (params$transform_matrix == "N2"){
-    ggsave(file.path(figures_folder, "dcca_var_networks_N2.png"),
+    ggsave(file.path(figures_folder, "Fig_S1_S9_dcca_var_networks_N2.png"),
        width = 18, height = 10, units = "cm")
 }
 ```

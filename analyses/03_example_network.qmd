@@ -19,7 +19,7 @@ params:
   colli: "cornflowerblue"
   dataset: "Peru1"
   log_transform_traits: FALSE
-  transform_matrix: ""
+  transform_matrix: "N2"
 bibliography: references.bib
 ---
 
@@ -39,6 +39,8 @@ library(adegraphics)
 library(douconca)
 
 library(effectsize)
+
+library(metafor) # meta-analysis for Pearson coef
 
 devtools::load_all()
 
@@ -327,7 +329,7 @@ multiplot(indiv_row = l1,
           force_pull = 0.1) +
   ggtitle("Plant niches")
 
-if (!params$log_transform_traits  & params$transform_matrix == "") {
+if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_S1_S3b_cca_birds_pniches.png"),
        width = 13, height = 11, units = "cm")
 }
@@ -369,6 +371,11 @@ sum(dcca$eig[1:2])/sum(dcca$eig)
 if (params$transform_matrix == "log1p") {
   corR_plot <- -dcca$corR
   corQ_plot <- -dcca$corQ
+} else if (params$transform_matrix == "N2") {
+  corR_plot <- dcca$corR
+  corQ_plot <- dcca$corQ
+  corR_plot[, 2] <- -corR_plot[, 2]
+  corQ_plot[, 2] <- -corQ_plot[, 2]
 } else {
   corR_plot <- dcca$corR
   corQ_plot <- dcca$corQ
@@ -390,8 +397,8 @@ if (!params$log_transform_traits & params$transform_matrix == "") {
 } else if (params$log_transform_traits){
   ggsave(file.path(figures_folder, "Fig_S1_S6a_dcca_corcircle_log.png"),
        width = 15, height = 11, units = "cm")
-} else if (params$transform_matrix == "log1p"){
-  ggsave(file.path(figures_folder, "Fig_S1_S8a_dcca_corcircle_logm.png"),
+} else if (params$transform_matrix == "N2"){
+  ggsave(file.path(figures_folder, "Fig_S1_S8a_dcca_corcircle_N2.png"),
        width = 15, height = 11, units = "cm")
 }
 ```
@@ -425,6 +432,18 @@ if (params$transform_matrix == "log1p") {
   
   l1_plot <- -dcca$l1
   lsQ_plot <- -dcca$lsQ
+} else if (params$transform_matrix == "N2") {
+  lsR_plot <- dcca$lsR
+  lsR_plot[, 2] <- -lsR_plot[, 2] 
+  
+  c1_plot <- dcca$c1
+  c1_plot[, 2] <- -c1_plot[, 2] 
+  
+  l1_plot <- dcca$l1
+  l1_plot[, 2] <- -l1_plot[, 2] 
+  
+  lsQ_plot <- dcca$lsQ
+  lsQ_plot[, 2] <- -lsQ_plot[, 2] 
 } else {
   lsR_plot <- dcca$lsR
   c1_plot <- dcca$c1
@@ -451,8 +470,8 @@ if (!params$log_transform_traits & params$transform_matrix == "") {
 } else if (params$log_transform_traits) {
   ggsave(file.path(figures_folder, "Fig_S1_S6b_dcca_pniches_log.png"),
          width = 11, height = 11, units = "cm")
-} else if (params$transform_matrix == "log1p") {
-  ggsave(file.path(figures_folder, "Fig_S1_S8b_dcca_pniches_logm.png"),
+} else if (params$transform_matrix == "N2") {
+  ggsave(file.path(figures_folder, "Fig_S1_S8b_dcca_pniches_N2.png"),
          width = 11, height = 11, units = "cm")
 }
 
@@ -475,8 +494,8 @@ if (!params$log_transform_traits & params$transform_matrix == "") {
 } else if (params$log_transform_traits){
   ggsave(file.path(figures_folder, "Fig_S1_S6c_dcca_bniches_log.png"),
        width = 11, height = 11, units = "cm")
-} else if (params$transform_matrix == "log1p") {
-  ggsave(file.path(figures_folder, "Fig_S1_S8c_dcca_bniches_logm.png"),
+} else if (params$transform_matrix == "N2") {
+  ggsave(file.path(figures_folder, "Fig_S1_S8c_dcca_bniches_N2.png"),
        width = 11, height = 11, units = "cm")
 }
 
@@ -854,9 +873,6 @@ plant_codes <- plant_traits_codes[, c("plant_species_code", "plant_species_name"
 ```
 
 ```{r}
-#| fig-width: 15
-#| fig-height: 15
-
 # Format data
 y_eq_df <- format_fit(interactions, yfit, 
                       idcols = colnames(interactions), bcodes = bird_codes)
@@ -869,13 +885,38 @@ y_eq_df <- y_eq_df |>
 y_eq_df <- y_eq_df |> 
   dplyr::mutate(plant_species_name_code = paste0("*", plant_species_name, "*", " (", plant_species_code, ")")) |> 
   dplyr::mutate(bird_species_name_code = paste0("*", bird_species_name, "*", " (", bird_species_code, ")"))
+```
 
+### By birds
+
+```{r}
 # Get correlations by bird
 y_eq_cor_birds <- y_eq_df |> 
   dplyr::group_by(bird_species_name_code) |> 
-  dplyr::summarize(cor = cor(values_x, values_y)) |> 
-  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+  dplyr::summarize(cor = cor(values_x, values_y),
+                   n = dplyr::n()) |> 
+  dplyr::mutate(label = paste("r =", round(cor, 3)))
+
+hist(y_eq_cor_birds$cor)
 summary(y_eq_cor_birds$cor)
+
+# Proper meta-analytic testing
+# Transform raw Pearson's r to Fisher Z
+dat <- escalc(measure = "ZCOR", 
+              ri = y_eq_cor_birds$cor, ni = y_eq_cor_birds$n)
+
+# Fixed-effects model
+z_test <- rma.uni(yi, vi, data = dat, method = "FE")
+summary(z_test)
+
+# Get z estimates reported (mean +- SE)
+z_test$b
+z_test$se
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 15
 
 # Plot birds
 ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
@@ -898,16 +939,37 @@ ggsave(file.path(figures_folder, "Fig_S1_S10_pred_vs_count_birds_all.png"),
        width = 34, height = 30, units = "cm")
 ```
 
-```{r}
-#| fig-width: 15
-#| fig-height: 15
+### By plants
 
+```{r}
 # Get correlations by plants
 y_eq_cor_plants <- y_eq_df |> 
   dplyr::group_by(plant_species_name_code) |> 
-  dplyr::summarize(cor = cor(values_x, values_y)) |> 
-  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+  dplyr::summarize(cor = cor(values_x, values_y),
+                   n = dplyr::n()) |> 
+  dplyr::mutate(label = paste("r =", round(cor, 3)))
+
+hist(y_eq_cor_plants$cor)
 summary(y_eq_cor_plants$cor)
+
+# Proper meta-analytic testing
+# Transform raw Pearson's r to Fisher Z
+dat <- escalc(measure = "ZCOR", 
+              ri = y_eq_cor_plants$cor, ni = y_eq_cor_plants$n)
+
+# Fixed-effects model
+z_test <- rma.uni(yi, vi, data = dat, method = "FE")
+summary(z_test)
+
+# Get z estimates reported (mean +- SE)
+z_test$b
+z_test$se
+```
+
+
+```{r}
+#| fig-width: 15
+#| fig-height: 15
 
 # Plot plants
 ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
@@ -929,6 +991,8 @@ ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
 ggsave(file.path(figures_folder, "Fig_S1_S11_pred_vs_count_plants_all.png"),
        width = 34, height = 30, units = "cm")
 ```
+
+### Plot residuals
 
 ```{r}
 # Plot residuals
@@ -1107,7 +1171,7 @@ y_eq_df <- format_fit(interactions[,id_birds], ytest_eq,
 y_eq_cor <- y_eq_df |> 
   dplyr::group_by(bird_species_name) |> 
   dplyr::summarize(cor = cor(values_x, values_y)) |> 
-  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+  dplyr::mutate(label = paste("r =", round(cor, 3)))
 
 # Plot
 ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
@@ -1136,7 +1200,7 @@ y_eq_df <- format_fit(ytest_eq_true, ytest_eq,
 y_eq_cor <- y_eq_df |> 
   dplyr::group_by(bird_species_name) |> 
   dplyr::summarize(cor = cor(values_x, values_y)) |> 
-  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+  dplyr::mutate(label = paste("r =", round(cor, 3)))
 
 # Plot
 ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
@@ -1165,7 +1229,7 @@ y_eq_df <- format_fit(ytest_true, ytest,
 y_eq_cor <- y_eq_df |> 
   dplyr::group_by(bird_species_name) |> 
   dplyr::summarize(cor = cor(values_x, values_y)) |> 
-  dplyr::mutate(label = paste("R2 =", round(cor, 3)))
+  dplyr::mutate(label = paste("r =", round(cor, 3)))
 
 # Plot
 ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
