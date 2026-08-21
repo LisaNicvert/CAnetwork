@@ -60,7 +60,8 @@ quarto::quarto_render(file.path(analyses_folder, "04_all_networks.qmd"),
                                             transform_matrix = transform_matrix))
 
 # Evaluate R2 correction (Appendix S1 Section S6)
-# This takes a long time to run (~17 hours) so results are precomputed
+# This takes a long time to run (~17 hours) so results are precomputed 
+# when rendering the Quarto document
 # Change nrep to a smaller number to make tests
 nrep <- 300
 quarto::quarto_render(file.path(analyses_folder, "05_corrected_R2.qmd"),
