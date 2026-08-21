@@ -24,7 +24,7 @@ thr <- 1
 #   2) log_transform_traits = FALSE and transform_matrix = "log1p"
 
 # log-transform traits?
-log_transform_traits <- TRUE
+log_transform_traits <- FALSE
 
 # Transform interaction counts
 # Possible values: 
