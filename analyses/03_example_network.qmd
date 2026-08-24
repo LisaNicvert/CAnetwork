@@ -943,8 +943,10 @@ ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
   theme(axis.title = element_text(size = 15),
         strip.text = ggtext::element_markdown(size = 7))
 
-ggsave(file.path(figures_folder, "Fig_S1_S10_pred_vs_count_birds_all.png"),
+if (!params$log_transform_traits & params$transform_matrix == "") {
+  ggsave(file.path(figures_folder, "Fig_S1_S10_pred_vs_count_birds_all.png"),
        width = 34, height = 30, units = "cm")
+}
 ```
 
 ### By plants
@@ -997,8 +999,10 @@ ggplot(y_eq_df, aes(x = values_x, y = values_y)) +
   theme(axis.title = element_text(size = 15),
         strip.text = ggtext::element_markdown(size = 7))
 
-ggsave(file.path(figures_folder, "Fig_S1_S11_pred_vs_count_plants_all.png"),
+if (!params$log_transform_traits & params$transform_matrix == "") {
+  ggsave(file.path(figures_folder, "Fig_S1_S11_pred_vs_count_plants_all.png"),
        width = 34, height = 30, units = "cm")
+}
 ```
 
 ### Plot residuals
@@ -1168,8 +1172,10 @@ ggplot(y_df, aes(x = values_x, y = values_y)) +
              hjust = -0.2, vjust = 1.5) +
   theme(strip.text = element_text(face = "italic"))
 
-ggsave(file.path(figures_folder, "Fig_S1_S12a_pred_vs_count.png"),
+if (!params$log_transform_traits & params$transform_matrix == "") {
+  ggsave(file.path(figures_folder, "Fig_S1_S12a_pred_vs_count.png"),
        width = 20, height = 7, units = "cm")
+}
 ```
 Next, we compare to the fitted counts (fitted on the whole interaction matrix, and reweighted)
 
@@ -1199,7 +1205,9 @@ ggplot(y_df, aes(x = values_x, y = values_y)) +
              hjust = -0.2, vjust = 1.5) +
   theme(strip.text = element_text(face = "italic"))
 
-ggsave(file.path(figures_folder, "Fig_S1_S12b_pred_vs_pred.png"),
+if (!params$log_transform_traits & params$transform_matrix == "") {
+  ggsave(file.path(figures_folder, "Fig_S1_S12b_pred_vs_pred.png"),
        width = 20, height = 7, units = "cm")
+}
 ```
 
