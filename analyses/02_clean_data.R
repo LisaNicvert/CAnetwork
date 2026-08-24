@@ -5,7 +5,7 @@ devtools::load_all()
 
 
 data_folder <- here("data/ANDEAN_frugivory")
-out_folder <- here("outputs/01_clean_data")
+out_folder <- here("outputs/02_clean_data")
 
 # Get data folder ---------------------------------------------------------
 all_files <- list.files(data_folder)

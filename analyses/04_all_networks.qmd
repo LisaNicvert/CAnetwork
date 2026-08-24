@@ -50,7 +50,7 @@ nrepet <- 999
 out_folder <- here("outputs", "04_all_networks")
 
 figures_folder <- here("figures")
-input_folder <- file.path(here("outputs/01_clean_data"))
+input_folder <- file.path(here("outputs/02_clean_data"))
 ```
 
 ## Read data
