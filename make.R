@@ -23,16 +23,22 @@ thr <- 1
 #   1) log_transform_traits = TRUE and transform_matrix = ""
 #   2) log_transform_traits = FALSE and transform_matrix = "log1p"
 
+# Below, we run the whole analyses (make sure that the main text analysis 
+# parameters are the last to keep their html)
+
 # log-transform traits?
-log_transform_traits <- FALSE
+log_transform_traits <- c(TRUE, FALSE, FALSE)
 
 # Transform interaction counts
 # Possible values: 
 # - "log1p" for log(x + 1),
 # - "N2" for N2 preprocessing (see https://doi.org/10.32942/X2TT0B)
 # - "" for no transformation
-transform_matrix <- ""
+transform_matrix <- c("", "N2", "")
 
+if (length(log_transform_traits) != length(transform_matrix)) {
+  stop("log_transform traits and transform_matrix must have the same length")
+}
 
 # Run analyses ------------------------------------------------------------
 
@@ -42,22 +48,28 @@ source(file.path(analyses_folder, "01_Fig_1_summary.R"))
 # Prepare data (writes data to outputs/02_clean_data)
 source(file.path(analyses_folder, "02_clean_data.R"))
 
-# Analyze network Peru1
-dataset <- "Peru1"
-quarto::quarto_render(file.path(analyses_folder, "03_example_network.qmd"),
-                      execute_params = list(dataset = dataset,
-                                            thr = thr,
-                                            colco = colco, 
-                                            colli = colli,
-                                            log_transform_traits = log_transform_traits))
+for (i in 1:length(log_transform_traits)) {
+  
+  dataset <- "Peru1"
+  # Analyze network Peru1
+  quarto::quarto_render(file.path(analyses_folder, "03_example_network.qmd"),
+                        execute_params = list(dataset = dataset,
+                                              thr = thr,
+                                              colco = colco, 
+                                              colli = colli,
+                                              log_transform_traits = log_transform_traits[i],
+                                              transform_matrix = transform_matrix[i]))
+  
+  # Analyze all networks
+  quarto::quarto_render(file.path(analyses_folder, "04_all_networks.qmd"),
+                        execute_params = list(thr = thr, 
+                                              colco = colco, 
+                                              colli = colli,
+                                              log_transform_traits = log_transform_traits[i],
+                                              transform_matrix = transform_matrix[i]))
+  
+}
 
-# Analyze all networks
-quarto::quarto_render(file.path(analyses_folder, "04_all_networks.qmd"),
-                      execute_params = list(thr = thr, 
-                                            colco = colco, 
-                                            colli = colli,
-                                            log_transform_traits = log_transform_traits,
-                                            transform_matrix = transform_matrix))
 
 # Evaluate R2 correction (Appendix S1 Section S6)
 # This takes a long time to run (~17 hours) so results are precomputed 
