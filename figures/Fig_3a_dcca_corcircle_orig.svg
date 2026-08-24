@@ -110,8 +110,8 @@
 <text x='229.10' y='291.55' text-anchor='middle' style='font-size: 8.80px; font-family: "Arial";' textLength='12.22px' lengthAdjust='spacingAndGlyphs'>0.0</text>
 <text x='291.56' y='291.55' text-anchor='middle' style='font-size: 8.80px; font-family: "Arial";' textLength='12.22px' lengthAdjust='spacingAndGlyphs'>0.5</text>
 <text x='354.03' y='291.55' text-anchor='middle' style='font-size: 8.80px; font-family: "Arial";' textLength='12.22px' lengthAdjust='spacingAndGlyphs'>1.0</text>
-<text x='229.10' y='304.01' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='123.53px' lengthAdjust='spacingAndGlyphs'>Axis 1 (49.2 % variability)</text>
-<text transform='translate(66.55,142.90) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='123.53px' lengthAdjust='spacingAndGlyphs'>Axis 2 (31.8 % variability)</text>
+<text x='229.10' y='304.01' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='123.53px' lengthAdjust='spacingAndGlyphs'>Axis 1 (59.3 % variability)</text>
+<text transform='translate(66.55,142.90) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='123.53px' lengthAdjust='spacingAndGlyphs'>Axis 2 (31.6 % variability)</text>
 </g>
 </g>
 </svg>

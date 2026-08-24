@@ -389,7 +389,7 @@ plot_corcircle(cor = corR_plot,
                lty = "longdash",
                lty2 = "solid",
                label2 = bird_traits_labels,
-               eig = cca_plants$eig)
+               eig = dcca$eig)
 
 if (!params$log_transform_traits & params$transform_matrix == "") {
   ggsave(file.path(figures_folder, "Fig_3a_dcca_corcircle_orig.svg"),
