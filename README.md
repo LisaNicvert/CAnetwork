@@ -12,8 +12,14 @@ The dataset contained in the `data/` folder comes from the ANDEAN frugivory data
 -   `analyses/` contains all scripts to reproduce the analyses.
     - `01_Fig_1_summary.R` plots the Figure 1 from the manuscript
     - `02_clean_data.R` formats original data from Dehling et al. (2021) for the analysis
-    - `03_example_network.qmd` (compiled file: `03_example_network.html`) performs the detailed analysis on network Peru1, as well as the analyses detailed in Appendix S1:Sections 8 (data transformations), 9 (model fit) and 10 (model predictive power).
-    - `04_all_networks.qmd` (compiled file: `04_all_networks.html`) performs variation partitioning on all networks
+    - `03_example_network.qmd` (3 compiled files, each corresponding to different data transformations) performs the detailed analysis on network Peru1, as well as the analyses detailed in Appendix S1:Sections 8 (data transformations), 9 (model fit) and 10 (model predictive power).
+      - `03_example_network_logtraits_FALSE_mat_notrans.html` corresponds to the analyses of the main text (no data transformations)
+      - `03_example_network_logtraits_TRUE_mat_notrans.html` corresponds to the log-transformed traits (Appendix S1:Section S8.1)
+      - `03_example_network_logtraits_FALSE_mat_N2.html` corresponds to the N2-transformed matrix (Appendix S1:Section S8.2)
+    - `04_all_networks.qmd` (3 compiled files, each corresponding to different data transformations) performs variation partitioning on all networks
+      - `04_all_network_logtraits_FALSE_mat_notrans.html` corresponds to the analyses of the main text (no data transformations)
+      - `04_all_network_logtraits_TRUE_mat_notrans.html` corresponds to the log-transformed traits (Appendix S1:Section S8.1)
+      - `04_all_network_logtraits_FALSE_mat_N2.html` corresponds to the N2-transformed matrix (Appendix S1:Section S8.2)
     - `05_corrected_R2.qmd`(compiled file: `05_corrected_R2.html`) evaluates the R2 correction (Appendix F)
 -   `R/` contains the R functions developed for this project (as a R package).
 -   `CAnetwork_xxx.pdf` contains the PDF documentation of the functions written in `R/`.
