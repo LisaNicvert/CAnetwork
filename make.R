@@ -23,18 +23,17 @@ thr <- 1
 #   1) log_transform_traits = TRUE and transform_matrix = ""
 #   2) log_transform_traits = FALSE and transform_matrix = "log1p"
 
-# Below, we run the whole analyses (make sure that the main text analysis 
-# parameters are the last to keep their html)
+# Below, we run the whole analysis with different combinations
 
 # log-transform traits?
-log_transform_traits <- c(TRUE, FALSE, FALSE)
+log_transform_traits <- c(FALSE, TRUE, FALSE)
 
 # Transform interaction counts
 # Possible values: 
 # - "log1p" for log(x + 1),
 # - "N2" for N2 preprocessing (see https://doi.org/10.32942/X2TT0B)
 # - "" for no transformation
-transform_matrix <- c("", "N2", "")
+transform_matrix <- c("", "", "N2")
 
 if (length(log_transform_traits) != length(transform_matrix)) {
   stop("log_transform traits and transform_matrix must have the same length")
@@ -58,7 +57,11 @@ for (i in 1:length(log_transform_traits)) {
                                               colco = colco, 
                                               colli = colli,
                                               log_transform_traits = log_transform_traits[i],
-                                              transform_matrix = transform_matrix[i]))
+                                              transform_matrix = transform_matrix[i]),
+                        output_file = paste("03_example_network_logtraits",
+                                            log_transform_traits[i],
+                                            "mat", ifelse(transform_matrix[i] == "", "notrans", transform_matrix[i]),
+                                            sep = "_"))
   
   # Analyze all networks
   quarto::quarto_render(file.path(analyses_folder, "04_all_networks.qmd"),
@@ -66,7 +69,11 @@ for (i in 1:length(log_transform_traits)) {
                                               colco = colco, 
                                               colli = colli,
                                               log_transform_traits = log_transform_traits[i],
-                                              transform_matrix = transform_matrix[i]))
+                                              transform_matrix = transform_matrix[i]),
+                        output_file = paste("04_all_network_logtraits",
+                                            log_transform_traits[i],
+                                            "mat", ifelse(transform_matrix[i] == "", "notrans", transform_matrix[i]),
+                                            sep = "_"))
   
 }
 
