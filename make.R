@@ -41,7 +41,7 @@ if (length(log_transform_traits) != length(transform_matrix)) {
 
 # Run analyses ------------------------------------------------------------
 
-# Plot Figure 1 (writes Figure to figures/01_Fig_1_summary/)
+# Plot Figure 1
 source(file.path(analyses_folder, "01_Fig_1_summary.R"))
 
 # Prepare data (writes data to outputs/02_clean_data)

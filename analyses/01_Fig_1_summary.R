@@ -12,7 +12,7 @@ library(here)
 
 devtools::load_all()
 
-figures_path <- here("figures", "Fig_1_summary")
+figures_path <- here("figures")
 
 # Create example data -----------------------------------------------------
 n_consumer <- 8
