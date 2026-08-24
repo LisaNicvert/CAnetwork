@@ -796,10 +796,6 @@ if (!params$log_transform_traits & params$transform_matrix == "") {
   dev.off()
 }
 ```
-```{r}
-knitr::include_graphics(file.path(figures_folder, "Fig_S1_S4b_diff_plants.png"))
-knitr::include_graphics(file.path(figures_folder, "Fig_S1_S4a_diff_birds.png"))
-```
 
 
 ### CCA with plant traits
