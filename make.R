@@ -49,9 +49,9 @@ source(file.path(analyses_folder, "02_clean_data.R"))
 
 for (i in 1:length(log_transform_traits)) {
   print(paste0(
-    "log-transform traits:", log_transform_traits[i], 
-    " | matrix transformation:", transform_matrix[i]),
-    " -----------------")
+    "log-transform traits: ", log_transform_traits[i], 
+    " | matrix transformation: ", transform_matrix[i],
+    " -----------------"))
   dataset <- "Peru1"
   # Analyze network Peru1
   quarto::quarto_render(file.path(analyses_folder, "03_example_network.qmd"),
