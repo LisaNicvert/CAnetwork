@@ -17,8 +17,8 @@ params:
   thr: 1
   colco: "darkred"
   colli: "cornflowerblue"
-  log_transform_traits: FALSE
-  transform_matrix: "N2"
+  log_transform_traits: TRUE
+  transform_matrix: ""
 bibliography: references.bib
 ---
 
@@ -92,6 +92,12 @@ for (i in 1:length(inter_list)) {
                            columns = "bird_species_code")
   intermat <- filter_matrix(intermat, thr = params$thr)
   
+  if (params$log_transform_traits) {
+    # Remove species with trait values equal to zero before filtering
+    pt_list[[i]] <- pt_list[[i]] |> 
+      filter(plant_species != "Miconia_307")
+  }
+  
   # Prepare traits
   pnames <- pt_list[[i]] |> 
     dplyr::select(plant_species_code, plant_species)
@@ -132,24 +138,22 @@ for (i in 1:length(inter_list)) {
   }
   
   if (params$log_transform_traits) {
-    # Remove species where traits have values zero
-    pt <- pt |> filter(plant_species != "Miconia_307")
-    
-    zero_pt <- which(pt == 0, arr.ind = TRUE)
+    # Check there will not be Nas
+    zero_pt <- which(pt_filtered <= 0, arr.ind = TRUE)
     if (nrow(zero_pt) != 0) {
-      stop("Cannot log-transform plant trait equal to zero")
+      stop("Cannot log-transform plant trait less than zero")
     }
     
-    zero_bt <- which(bt == 0, arr.ind = TRUE)
+    zero_bt <- which(bt_filtered <= 0, arr.ind = TRUE)
     if (nrow(zero_bt) != 0) {
-      stop("Cannot log-transform bird trait equal to zero")
+      stop("Cannot log-transform bird trait less than zero")
     }
     
     # Log-transform traits
-    bt <- bt |> 
+    bt_filtered <- bt_filtered |> 
       dplyr::mutate(across(c(KippsIndex, BillLength, BillWidth, Bodymass), 
                            log))
-    pt <- pt |> 
+    pt_filtered <- pt_filtered |> 
       dplyr::mutate(across(c(meanL, meanD1, meanHeight, CropMass), 
                            log))
   }
@@ -225,8 +229,11 @@ Rcor_df |>
   dplyr::group_by(dataset) |> 
   dplyr::summarize(sum = sum(R2_corr)) |> 
   DT::datatable()
+```
 
-# Filter out datasets with NAs
+
+```{r}
+# Filter out datasets with NAs (if any)
 is_na <- unique(Rcor_df$dataset[is.na(Rcor_df$R2_corr)])
 Rcor_df <- Rcor_df |>
   filter(!dataset %in% is_na)
@@ -252,17 +259,20 @@ paste(nrow(neg), "datasets have negative R2 values:",
 Rcor_df <- Rcor_df |> dplyr::mutate(signif = p > 0.05)
 
 # Format for labels
+type_name_vector <- c("Residual [d]", "Bird traits [c]", "Plant traits [a]", "Matching [b]")
+names(type_name_vector) <- c("residual", "bird_traits", "plant_traits", "matching")
+
 Rcor_df <- Rcor_df |> 
-  dplyr::mutate(type_name = gsub("_", " ", type), 
+  dplyr::mutate(type_name = type_name_vector[type], 
                 .after = type) |> 
   dplyr::mutate(dataset_name = gsub("_", " ", dataset), 
                 .after = dataset)
 
 # Reorder factors
 Rcor_df$type <- factor(Rcor_df$type, 
-                       levels = c("residual", "bird_traits", "plant_traits", "matching"))
+                       levels = names(type_name_vector))
 Rcor_df$type_name <- factor(Rcor_df$type_name, 
-                            levels = c("residual", "bird traits", "plant traits", "matching"))
+                            levels = unname(type_name_vector))
 ```
 
 ### By dataset
@@ -305,8 +315,8 @@ coltype <- viridisLite::viridis(n = length(levels(Rcor_df$type_name)),
 names(coltype) <- levels(Rcor_df$type_name)
 
 # Dataset order
-subset <- Rcor_df[Rcor_df$type_name == "residual", ]
-ord <- order(subset$R2_corr[subset$type_name == "residual"])
+subset <- Rcor_df[Rcor_df$type_name == "Residual [d]", ]
+ord <- order(subset$R2_corr[subset$type_name =="Residual [d]"])
 dataset_order <- subset$dataset_name[rev(ord)]
 
 Rcor_df_bar <- Rcor_df
@@ -330,7 +340,9 @@ Rcor_df_bar$dataset_name <- factor(Rcor_df_bar$dataset_name,
   guides(fill = guide_legend(reverse = TRUE)) +
   ylab("Dataset") +
   theme_minimal() +
-  theme(legend.position = "bottom"))
+  theme(legend.position = "bottom",
+        legend.key.spacing.x = unit(0.5, "cm"))
+ )
 ```
 
 
@@ -373,10 +385,11 @@ median_df <- data.frame(type_name = names(median),
 #| fig-height: 5
 #| code-fold: true
 
-(gbar + gbox) + 
+(gbar + plot_spacer() + gbox) + 
   # plot_annotation(title = "No filtering") +
   plot_layout(guides = 'collect',
-              axis_titles = "collect") &
+              axis_titles = "collect", 
+              widths = c(10, 0.5, 10)) &
   theme(legend.position='bottom') &
   scale_x_continuous(breaks = seq(0, 1, by = 0.2),
                      limits = c(-0.2, 1.2),
