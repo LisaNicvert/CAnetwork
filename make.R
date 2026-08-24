@@ -16,14 +16,11 @@ thr <- 1
 
 # Data transformations ----------------------------------------------------
 
-# To reproduce results from the main text: 
-# set log_transform_traits to FALSE and transform_matrix to ""
-
-# To reproduce results from Appendix S1 Section S8, 2 runs are needed:
-#   1) log_transform_traits = TRUE and transform_matrix = ""
-#   2) log_transform_traits = FALSE and transform_matrix = "log1p"
-
-# Below, we run the whole analysis with different combinations
+# Below, we run the whole analysis with different combinations of transformations
+# This reproduces resutlts:
+#   1) from the main text (log_transform_traits = FALSE and transform_matrix = "")
+#   2) from Appendix S1: Section 8.1 (log_transform_traits = TRUE and transform_matrix = "")
+#   2) from Appendix S1: Section 8.2 (log_transform_traits = FALSE and transform_matrix = "N2")
 
 # log-transform traits?
 log_transform_traits <- c(FALSE, TRUE, FALSE)
@@ -34,6 +31,11 @@ log_transform_traits <- c(FALSE, TRUE, FALSE)
 # - "N2" for N2 preprocessing (see https://doi.org/10.32942/X2TT0B)
 # - "" for no transformation
 transform_matrix <- c("", "", "N2")
+
+# To reproduce results from the main text only, use: 
+# log_transform_traits <- FALSE
+# transform_matrix <- ""
+
 
 if (length(log_transform_traits) != length(transform_matrix)) {
   stop("log_transform traits and transform_matrix must have the same length")
