@@ -244,17 +244,19 @@ ggplot(res_R2) +
                  col = type_label),
                  position = position_dodge(width = 0.8),
                  hjust = 0,
+             size = 4,
              show.legend = FALSE) +
   scale_x_discrete(limits = rev) +
   scale_y_continuous(limits = c(-0.07, 0.4)) +
   xlab("Link type") +
   ylab(expression(R^2)) +
   labs(fill = expression(R^2~"type")) +
-  theme_minimal() +
-  coord_flip()
+  theme_minimal(base_size = 15) +
+  coord_flip() +
+  theme(legend.position = "bottom")
 
 ggsave(file.path(figures_folder, "Fig_S1_S5a_R2_comparison.png"),
-       width = 16, height = 10, units = "cm", bg = "white")
+       width = 15, height = 12, units = "cm", bg = "white")
 ```
 
 ```{r}
@@ -295,16 +297,17 @@ ggplot(res_df) +
   geom_label(data = pval_prop,
             aes(y = 0.07, x = perm_label,
                 label = prop_signif_label),
-                hjust = 0, nudge_x = 0.05) +
+            size = 4,
+            hjust = 0, vjust = 0.5) +
   scale_x_discrete(limits = rev) +
   ylim(0, 1) +
   ylab("p-value") +
   xlab("Link type") +
-  theme_minimal() +
+  theme_minimal(base_size = 15) +
   coord_flip()
 
 ggsave(file.path(figures_folder, "Fig_S1_S5b_pval_distri.png"),
-       width = 14, height = 10, units = "cm", 
+       width = 15, height = 12, units = "cm", 
        bg = "white")
 ```
 
